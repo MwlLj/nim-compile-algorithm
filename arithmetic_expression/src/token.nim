@@ -4,7 +4,7 @@
 
 type
     Ident* = enum
-        number, operator, parentheses
+        number, operator, parentheses_start, parentheses_end
 
 type
     Token* = object
@@ -32,9 +32,14 @@ proc newToken*(s: string): seq[Token] =
             word = ""
         of ' ':
             discard
-        of '(', ')':
+        of '(':
             result.add(Token(
-                ident: Ident.parentheses,
+                ident: Ident.parentheses_start,
+                value: $c
+                ))
+        of ')':
+            result.add(Token(
+                ident: Ident.parentheses_end,
                 value: $c
                 ))
         else:
