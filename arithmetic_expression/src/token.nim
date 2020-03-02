@@ -8,7 +8,7 @@ type
 
 type
     Token* = object
-        ident: Ident
+        ident*: Ident
         value*: string
 
 proc defaultToken*(): Token =

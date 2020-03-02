@@ -16,6 +16,19 @@ proc takeOne(self: var Grammar): tuple[t: token.Token, ok: bool]
 ## 方法定义
 ]#
 proc second(self: Grammar) =
+    self.first()
+    while true:
+        let obj = self.lookupOne()
+        if obj[1] == false:
+            break
+        case obj[0].ident
+        of token.operator:
+            case obj[0].value
+            of '+' | '-':
+            else:
+                discard
+        else:
+            discard
     discard
 
 proc first(self: Grammar) =
