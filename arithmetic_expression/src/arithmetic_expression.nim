@@ -3,7 +3,8 @@ import "grammar"
 
 proc main() =
     let t = token.newToken("1 + 1 * 2")
-    let g = grammar.newGrammar(t)
+    var g = grammar.newGrammar(t)
+    let obj = g.parse()
 
 when isMainModule:
     main()
