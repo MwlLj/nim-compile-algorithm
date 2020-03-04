@@ -42,7 +42,7 @@ proc second(self: var Grammar): tuple[v: int, ok: bool] =
                 elif objValue == "-":
                     value -= f[0]
             else:
-                discard
+                return (0, true)
         else:
             discard
     return (value, true)
@@ -56,7 +56,6 @@ proc first(self: var Grammar): tuple[v: int, ok: bool] =
         let obj = self.lookupOne()
         if obj[1] == false:
             break
-        echo(obj)
         case obj[0].ident
         of token.operator:
             let objValue = obj[0].value
@@ -72,7 +71,7 @@ proc first(self: var Grammar): tuple[v: int, ok: bool] =
                 # elif objValue == "/":
                 #     value /= f[0]
             else:
-                discard
+                return (0, true)
         else:
             discard
     return (value, false)
@@ -81,7 +80,6 @@ proc zero(self: var Grammar): tuple[v: int, ok: bool] =
     let obj = self.takeOne()
     if obj[1] == false:
         return (0, false)
-    echo(obj)
     case obj[0].ident
     of token.number:
         try:
