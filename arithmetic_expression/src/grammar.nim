@@ -33,7 +33,7 @@ proc second(self: var Grammar): tuple[v: int, ok: bool] =
             if objValue == "+" or objValue == "-":
                 let takeObj = self.takeOne()
                 if takeObj[1] == false:
-                    return (0, false)
+                    return (value, true)
                 let f = self.first()
                 if f[1] == false:
                     return (0, false)
@@ -42,7 +42,7 @@ proc second(self: var Grammar): tuple[v: int, ok: bool] =
                 elif objValue == "-":
                     value -= f[0]
             else:
-                return (0, true)
+                return (value, true)
         else:
             discard
     return (value, true)
@@ -62,7 +62,7 @@ proc first(self: var Grammar): tuple[v: int, ok: bool] =
             if objValue == "*" or objValue == "/":
                 let takeObj = self.takeOne()
                 if takeObj[1] == false:
-                    return (0, false)
+                    return (value, true)
                 let f = self.first()
                 if f[1] == false:
                     return (0, false)
@@ -71,10 +71,10 @@ proc first(self: var Grammar): tuple[v: int, ok: bool] =
                 # elif objValue == "/":
                 #     value /= f[0]
             else:
-                return (0, true)
+                return (value, true)
         else:
             discard
-    return (value, false)
+    return (value, true)
 
 proc zero(self: var Grammar): tuple[v: int, ok: bool] =
     let obj = self.takeOne()
@@ -101,10 +101,11 @@ proc lookupOne(self: Grammar): tuple[t: token.Token, ok: bool] =
 proc takeOne(self: var Grammar): tuple[t: token.Token, ok: bool] =
     result = self.lookupOne()
     if result[1] == false:
-        return
+        return (token.defaultToken(), false)
     self.tokens.delete(0, 0)
 
 proc parse*(self: var Grammar): tuple[v: int, ok: bool] =
+    # return self.first()
     return self.second()
 
 proc newGrammar*(tokens: seq[token.Token]): Grammar =

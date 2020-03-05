@@ -46,6 +46,6 @@ proc newToken*(s: string): seq[Token] =
             word.add(c)
     if word != "":
         result.add(Token(
-            ident: Ident.operator,
+            ident: Ident.number,
             value: word
             ))
