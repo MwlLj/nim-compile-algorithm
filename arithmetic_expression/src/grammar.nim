@@ -79,13 +79,19 @@ proc first(self: var Grammar): tuple[v: int, ok: bool] =
 proc zero(self: var Grammar): tuple[v: int, ok: bool] =
     let obj = self.takeOne()
     if obj[1] == false:
-        return (0, false)
+        return (0, true)
     case obj[0].ident
     of token.number:
         try:
             return (strutils.parseInt(obj[0].value), true)
         except:
             return (0, false)
+    of token.parentheses_start:
+        let second = self.second()
+        if second[1] == false:
+            return (0, false)
+        else:
+            return (second[0], true)
     else:
         return (0, false)
 
@@ -96,6 +102,8 @@ proc lookupOne(self: Grammar): tuple[t: token.Token, ok: bool] =
     if len(self.tokens) == 0:
         return (token.defaultToken(), false)
     let t = self.tokens[0]
+    if t.ident == token.parentheses_end:
+        return (token.defaultToken(), false)
     return (t, true)
 
 proc takeOne(self: var Grammar): tuple[t: token.Token, ok: bool] =
