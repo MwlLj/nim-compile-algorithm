@@ -11,10 +11,15 @@ type
         ident*: Ident
         value*: string
 
+const ops = ['+', '-', '*', '/', '%', '(', ')']
+
 proc defaultToken*(): Token =
     result = Token()
 
 proc newToken*(s: string): seq[Token] =
+    result = newSeq[Token]()
+
+proc newToken2*(s: string): seq[Token] =
     result = newSeq[Token]()
     var word: string
     for c in s:
