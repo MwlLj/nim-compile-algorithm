@@ -2,8 +2,6 @@
 ## 将字符串转换为 token对象
 ]#
 
-import strutils
-
 type
     Ident* = enum
         number, operator, parentheses_start, parentheses_end
