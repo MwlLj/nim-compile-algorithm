@@ -15,6 +15,8 @@ type
         ModeOr,
         # =
         ModeEqual
+        # !
+        ModeExclamationMark
 
 type
     Token* = object
@@ -66,6 +68,21 @@ proc newToken*(s: string): seq[Token] =
                 ))
             mode = Mode.ModeNormal
             word = ""
+        of Mode.ModeExclamationMark:
+            if c == '=':
+                # !=
+                word.add(c)
+            else:
+                # !
+                discard
+            result.add(Token(
+                ident: Ident.operator,
+                value: word
+                ))
+            mode = Mode.ModeNormal
+            word = ""
+            if c != '=':
+                word.add(c)
         of Mode.ModeNormal:
             if c in ops:
                 if word != "":
@@ -98,7 +115,7 @@ proc newToken*(s: string): seq[Token] =
                 word = ""
                 mode = Mode.ModeOr
                 word.add(c)
-            elif c == '=' or c == '!' or c == '<' or c == '>':
+            elif c == '=' or c == '<' or c == '>':
                 if word != "":
                     result.add(Token(
                         ident: Ident.number,
@@ -106,6 +123,15 @@ proc newToken*(s: string): seq[Token] =
                         ))
                 word = ""
                 mode = Mode.ModeEqual
+                word.add(c)
+            elif c == '!':
+                if word != "":
+                    result.add(Token(
+                        ident: Ident.number,
+                        value: word
+                        ))
+                word = ""
+                mode = Mode.ModeExclamationMark
                 word.add(c)
             else:
                 word.add(c)
