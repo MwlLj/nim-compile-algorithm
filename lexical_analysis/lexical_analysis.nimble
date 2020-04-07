@@ -31,11 +31,14 @@ task run, "Run":
     try:
         cpFile(name, target)
         rmFile(name)
+        cd t
         when defined(linux):
             exec(fmt"chmod +x {name}")
-        cd t
         echo("***start exec***")
-        exec(fmt"{name}")
+        when defined(linux):
+            exec(fmt"./{name}")
+        else:
+            echo(fmt"{name}")
         echo("***exec end***")
     except:
         echo("unknow except")
