@@ -38,7 +38,7 @@ task run, "Run":
         when defined(linux):
             exec(fmt"./{name}")
         else:
-            echo(fmt"{name}")
+            exec(fmt"{name}")
         echo("***exec end***")
     except:
         echo("unknow except")

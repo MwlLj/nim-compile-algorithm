@@ -8,6 +8,11 @@ type
     TokenType* = enum
         TokenType_Id,
         TokenType_KW_If,
+        TokenType_KW_While,
+        TokenType_KW_For,
+        TokenType_KW_Fn,
+        TokenType_KW_True,
+        TokenType_KW_False,
         TokenType_Inner_Func_Print,
         TokenType_Single_Comment,
         TokenType_Multi_Comment,

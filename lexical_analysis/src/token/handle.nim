@@ -63,6 +63,8 @@ proc parse*(self: var parse.Parse): seq[token.Token] =
             discard
         of '%':
             discard
+        of ';':
+            discard
         else:
             if self.isIDStart(c):
                 var id: string

@@ -22,6 +22,16 @@ proc handleID*(self: var parse.Parse, id: var string) =
     case id
     of "if":
         tokenType = token.TokenType.TokenType_KW_If
+    of "while":
+        tokenType = token.TokenType.TokenType_KW_While
+    of "for":
+        tokenType = token.TokenType.TokenType_KW_For
+    of "fn":
+        tokenType = token.TokenType.TokenType_KW_Fn
+    of "true":
+        tokenType = token.TokenType.TokenType_KW_True
+    of "false":
+        tokenType = token.TokenType.TokenType_KW_False
     of "print":
         tokenType = token.TokenType.TokenType_Inner_Func_Print
     else:
