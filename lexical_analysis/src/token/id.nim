@@ -32,8 +32,8 @@ proc handleID*(self: var parse.Parse, id: var string) =
         tokenType = token.TokenType.TokenType_KW_True
     of "false":
         tokenType = token.TokenType.TokenType_KW_False
-    of "print":
-        tokenType = token.TokenType.TokenType_Inner_Func_Print
+    of "let":
+        tokenType = token.TokenType.TokenType_KW_Let
     else:
         tokenType = token.TokenType.TokenType_ID
     self.tokens.add(token.Token(

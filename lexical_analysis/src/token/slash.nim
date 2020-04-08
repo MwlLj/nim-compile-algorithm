@@ -72,7 +72,7 @@ proc handleMultiComment(self: var parse.Parse) =
         else:
             content.add(c)
             self.skipNextOne()
-    if count == 0:
+    if count > 0:
         echo("/* is not full pair")
     self.tokens.add(token.Token(
         tokenType: token.TokenType.TokenType_Multi_Comment,
@@ -96,5 +96,5 @@ proc handleSlash*(self: var parse.Parse) =
         self.skipNextOne()
         self.handleMultiComment()
     else:
-        discard
+        self.addChar(token.TokenType.TokenType_Symbol_Division, '/')
 

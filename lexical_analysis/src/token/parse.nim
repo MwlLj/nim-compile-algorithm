@@ -32,6 +32,22 @@ proc skipNextN*(self: var Parse, n: int) =
 proc skipNextOne*(self: var Parse) =
     self.skipNextN(1)
 
+proc addChar*(self: var parse.Parse, tokenType: token.TokenType, c: char) =
+    self.tokens.add(token.Token(
+        tokenType: tokenType,
+        value: token.Value(
+            ch: some(c)
+        )
+    ))
+
+proc addString*(self: var parse.Parse, tokenType: token.TokenType, s: string) =
+    self.tokens.add(token.Token(
+        tokenType: tokenType,
+        value: token.Value(
+            str: some(s)
+        )
+    ))
+
 proc new*(stream: string): Parse =
     result = Parse(
         stream: stream,

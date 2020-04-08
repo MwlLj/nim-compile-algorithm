@@ -9,15 +9,10 @@ proc main() =
     var parser = parse.new(stream)
     let tokens = handle.parse(parser)
     for t in tokens:
-        case t.tokenType
-        of token.TokenType.TokenType_Double_Quotes
-          , token.TokenType.TokenType_Back_Quotes
-          , token.TokenType.TokenType_Single_Comment
-          , token.TokenType.TokenType_Multi_Comment
-          , token.TokenType.TokenType_KW_If
-          , token.TokenType.TokenType_Inner_Func_Print:
-            if t.value.str.isSome():
-              echo(fmt"tokenType: {t.tokenType}, value: {t.value.str.get()}")
+        if t.value.str.isSome():
+            echo(fmt"tokenType: {t.tokenType}, value: {t.value.str.get()}")
+        elif t.value.ch.isSome():
+            echo(fmt"tokenType: {t.tokenType}, value: {t.value.ch.get()}")
         else:
             discard
 

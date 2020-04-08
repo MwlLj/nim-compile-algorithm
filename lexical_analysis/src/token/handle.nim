@@ -3,7 +3,12 @@ import "slash"
 import "token"
 import "double_quotes"
 import "back_quotes"
+import "exclamation_mark"
+import "assignment"
+import "than"
+import "backslash"
 import "id"
+import "line"
 import options
 
 proc isIDStart(self: var parse.Parse, c: char): bool =
@@ -17,38 +22,44 @@ proc parse*(self: var parse.Parse): seq[token.Token] =
         if v.isNone():
             break
         let c = v.get()
-        # echo(c)
+        # echo((int)c)
         case c
+        of '\r':
+            line.handleBackSlashR(self)
+        of '\n':
+            line.handleBackSlashN(self)
         of '/':
             slash.handleSlash(self)
+        of '\\':
+            backslash.handleBackSlash(self)
         of '"':
             double_quotes.handleDoubleQuotes(self)
         of '`':
             back_quotes.handleBackQuotes(self)
         of '!':
-            discard
+            exclamation_mark.handleExclamationMark(self)
         of '=':
-            discard
+            assignment.handleAssignment(self)
         of '<':
-            discard
+            than.handleLessThan(self)
         of '>':
-            discard
+            than.handleMoreThan(self)
         of '?':
             discard
         of ':':
-            discard
+            self.addChar(token.TokenType.TokenType_Symbol_Colon, c)
         of '(':
-            discard
+            self.addChar(token.TokenType.TokenType_Symbol_Parenthese_Left, c)
         of ')':
-            discard
+            self.addChar(token.TokenType.TokenType_Symbol_Parenthese_Right, c)
         of '{':
-            discard
+            self.addChar(token.TokenType.TokenType_Symbol_Big_Parenthese_Left, c)
         of '}':
-            discard
+            self.addChar(token.TokenType.TokenType_Symbol_Big_Parenthese_Right, c)
         of '[':
-            discard
+            self.addChar(token.TokenType.TokenType_Symbol_Square_Brackets_Left, c)
         of ']':
-            discard
+            self.addChar(token.TokenType.TokenType_Symbol_Square_Brackets_Right, c)
         of '+':
             discard
         of '-':
@@ -70,5 +81,7 @@ proc parse*(self: var parse.Parse): seq[token.Token] =
                 var id: string
                 id.add(c)
                 self.handleID(id)
+        #[
+        ]#
     return self.tokens
 
