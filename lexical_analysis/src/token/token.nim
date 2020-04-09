@@ -4,6 +4,7 @@ type
     Value* = object
         str*: Option[string]
         ch*: Option[char]
+        i64*: Option[int64]
 
 type
     TokenType* = enum
@@ -84,7 +85,10 @@ type
         # \n
         TokenType_Back_Slash_N,
         # \t
-        TokenType_Back_Slash_T
+        TokenType_Back_Slash_T,
+        TokenType_Number_Hex,
+        TokenType_Number_Des,
+        TokenType_Number_Oct
 
 type
     Token* = object

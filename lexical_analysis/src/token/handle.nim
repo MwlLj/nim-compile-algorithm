@@ -8,13 +8,9 @@ import "assignment"
 import "than"
 import "backslash"
 import "id"
+import "number"
 import "line"
 import options
-
-proc isIDStart(self: var parse.Parse, c: char): bool =
-    if c == '_' or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z'):
-        return true
-    return false
 
 proc parse*(self: var parse.Parse): seq[token.Token] =
     while true:
@@ -81,6 +77,8 @@ proc parse*(self: var parse.Parse): seq[token.Token] =
                 var id: string
                 id.add(c)
                 self.handleID(id)
+            elif self.isNumberStart(c):
+                self.handleNumber(c)
         #[
         ]#
     return self.tokens

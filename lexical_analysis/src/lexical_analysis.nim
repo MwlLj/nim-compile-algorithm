@@ -13,6 +13,8 @@ proc main() =
             echo(fmt"tokenType: {t.tokenType}, value: {t.value.str.get()}")
         elif t.value.ch.isSome():
             echo(fmt"tokenType: {t.tokenType}, value: {t.value.ch.get()}")
+        elif t.value.i64.isSome():
+            echo(fmt"tokenType: {t.tokenType}, value: {t.value.i64.get()}")
         else:
             discard
 

@@ -2,11 +2,6 @@ import "parse"
 import "token"
 import options
 
-proc isIDEnd(self: parse.Parse, c: char): bool =
-    if (c == '_') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c >= '0' and c <= '9'):
-        return true
-    return false
-
 proc handleID*(self: var parse.Parse, id: var string) =
     while true:
         let v = self.lookupNextOne()

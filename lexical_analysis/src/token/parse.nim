@@ -32,6 +32,22 @@ proc skipNextN*(self: var Parse, n: int) =
 proc skipNextOne*(self: var Parse) =
     self.skipNextN(1)
 
+proc isIDStart*(self: var parse.Parse, c: char): bool =
+    if c == '_' or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z'):
+        return true
+    return false
+
+# 除第一位外是否是 id 的元素
+proc isIDEnd*(self: parse.Parse, c: char): bool =
+    if (c == '_') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c >= '0' and c <= '9'):
+        return true
+    return false
+
+proc isNumberStart*(self: var parse.Parse, c: char): bool =
+    if c >= '0' and c <= '9':
+        return true
+    return false
+
 proc addChar*(self: var parse.Parse, tokenType: token.TokenType, c: char) =
     self.tokens.add(token.Token(
         tokenType: tokenType,
@@ -45,6 +61,14 @@ proc addString*(self: var parse.Parse, tokenType: token.TokenType, s: string) =
         tokenType: tokenType,
         value: token.Value(
             str: some(s)
+        )
+    ))
+
+proc addInt64*(self: var parse.Parse, tokenType: token.TokenType, i: int64) =
+    self.tokens.add(token.Token(
+        tokenType: tokenType,
+        value: token.Value(
+            i64: some(i)
         )
     ))
 
