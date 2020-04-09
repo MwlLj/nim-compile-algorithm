@@ -4,9 +4,9 @@ import options
 
 proc isHex(self: var parse.Parse, c: char): Option[int64] =
     if c >= 'a' and c <= 'f':
-        return some((int64)((int64)(c) - 97 + 48))
+        return some((int64)((int64)(c) - 97 + 10))
     elif c >= 'A' and c <= 'F':
-        return some((int64)((int64)(c) - 65 + 48))
+        return some((int64)((int64)(c) - 65 + 10))
     elif c >= '0' and c <= '9':
         return some((int64)((int64)(c) - 48))
     return none(int64)
@@ -21,7 +21,7 @@ proc handleZeroStart(self: var parse.Parse) =
     if v.isNone():
         return
     let c = v.get()
-    var number: int64 = 1
+    var number: int64
     var tokenType: token.TokenType
     case c
     of 'x', 'X':
@@ -39,7 +39,7 @@ proc handleZeroStart(self: var parse.Parse) =
                 if n.isNone():
                     break
                 else:
-                    number += number * 16 + n.get()
+                    number = number * 16 + n.get()
                     self.skipNextOne()
         tokenType = token.TokenType.TokenType_Number_Hex
     else:
@@ -58,7 +58,7 @@ proc handleZeroStart(self: var parse.Parse) =
                     if n.isNone():
                         break
                     else:
-                        number += number * 8 + n.get()
+                        number = number * 8 + n.get()
                         self.skipNextOne()
             tokenType = token.TokenType.TokenType_Number_Oct
     self.addInt64(tokenType, number)
@@ -68,7 +68,7 @@ proc handleNumber*(self: var parse.Parse, firstChar: char) =
     of '0':
         self.handleZeroStart()
     else:
-        var number: int64 = 1
+        var number: int64 = (int64)(firstChar) - 48
         while true:
             let v = self.lookupNextOne()
             if v.isNone():
@@ -78,7 +78,7 @@ proc handleNumber*(self: var parse.Parse, firstChar: char) =
                 if n.isNone():
                     break
                 else:
-                    number += number * 10 + n.get()
+                    number = number * 10 + n.get()
                     self.skipNextOne()
         let tokenType = token.TokenType.TokenType_Number_Des
         self.addInt64(tokenType, number)
