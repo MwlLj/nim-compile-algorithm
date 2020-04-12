@@ -11,4 +11,4 @@ proc handlePlus*(self: var parse.Parse) =
     of '=':
         discard
     else:
-        self.addChar(token.TokenType.TokenType_Symbol_Plus, '+')
+        self.addChar(token.TokenType.TokenType_Symbol_Plus, '+', 1)
