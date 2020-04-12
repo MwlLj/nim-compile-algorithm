@@ -94,6 +94,8 @@ type
     Token* = object
         tokenType*: TokenType
         value*: Value
+        lbp*: int
+        rbp*: int
 
 proc default*(): Token =
     result = Token()

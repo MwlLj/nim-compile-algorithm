@@ -10,6 +10,9 @@ import "backslash"
 import "id"
 import "number"
 import "line"
+import "plus"
+import "minus"
+import "multiplication"
 import options
 
 proc parse*(self: var parse.Parse): seq[token.Token] =
@@ -57,9 +60,11 @@ proc parse*(self: var parse.Parse): seq[token.Token] =
         of ']':
             self.addChar(token.TokenType.TokenType_Symbol_Square_Brackets_Right, c)
         of '+':
-            discard
+            plus.handlePlus(self)
         of '-':
-            discard
+            minus.handleMinus(self)
+        of '*':
+            multiplication.handleMultiplication(self)
         of '&':
             discard
         of '#':
