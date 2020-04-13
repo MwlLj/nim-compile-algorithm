@@ -87,6 +87,7 @@ proc getUsedTokenTotal*(self: Parse): int =
 
 proc tokenIsEnd(self: var Parse, t: token.Token): bool =
     if t.tokenType == token.TokenType_Line_Break:
+        self.skipNextOne()
         return true
     elif t.tokenType == token.TokenType_Symbol_Parenthese_Right:
         self.skipNextOne()
@@ -99,6 +100,7 @@ proc getCurrentToken(self: var Parse): Option[token.Token] =
     let t = self.tokens[self.index]
     if self.tokenIsEnd(t):
         return none(token.Token)
+        # return some(t)
     return some(t)
 
 proc takeNextOne(self: var Parse): Option[token.Token] =
