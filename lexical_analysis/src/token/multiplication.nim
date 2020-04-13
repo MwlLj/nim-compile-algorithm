@@ -11,4 +11,4 @@ proc handleMultiplication*(self: var parse.Parse) =
     of '=':
         self.addString(token.TokenType.TokenType_Symbol_Multiplication_Equal, "*=")
     else:
-        self.addChar(token.TokenType.TokenType_Symbol_Multiplication, '*')
+        self.addChar(token.TokenType.TokenType_Symbol_Multiplication, '*', 2)

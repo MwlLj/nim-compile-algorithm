@@ -96,5 +96,5 @@ proc handleSlash*(self: var parse.Parse) =
         self.skipNextOne()
         self.handleMultiComment()
     else:
-        self.addChar(token.TokenType.TokenType_Symbol_Division, '/')
+        self.addChar(token.TokenType.TokenType_Symbol_Division, '/', 2)
 

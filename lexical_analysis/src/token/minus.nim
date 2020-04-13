@@ -11,4 +11,4 @@ proc handleMinus*(self: var parse.Parse) =
     of '=':
         self.addString(token.TokenType.TokenType_Symbol_Minus_Equal, "-=")
     else:
-        self.addChar(token.TokenType.TokenType_Symbol_Minus, '-')
+        self.addChar(token.TokenType.TokenType_Symbol_Minus, '-', 1)
