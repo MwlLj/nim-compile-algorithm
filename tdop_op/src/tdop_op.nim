@@ -1,14 +1,17 @@
 import "expression/parse"
 import "expression/express"
-import "../../lexical_analysis/src/token/token" as token
-import "../../lexical_analysis/src/token/parse" as token_parse
-import "../../lexical_analysis/src/token/handle" as token_handle
+from "../../lexical_analysis/src/token/token" as token import nil
+# import "../../lexical_analysis/src/token/token" as token
+from "../../lexical_analysis/src/token/parse" as token_parse import nil
+from "../../lexical_analysis/src/token/handle" as token_handle import nil
 import strformat
 import options
 
 type
     Test = object
         tokens: seq[token.Token]
+        index: int
+        length: int
 
 proc iterExpr(self: Test, value: express.ExprValue): int64 =
     if value.exp.isSome():
@@ -40,22 +43,56 @@ proc iterExpr(self: Test, value: express.ExprValue): int64 =
         echo(v)
         return v
 
-proc parse(self: Test) =
-    var parser = parse.new(self.tokens)
-    let exprValue = parser.express(0)
-    if exprValue.isSome():
-        let r = self.iterExpr(exprValue.get())
-        echo(fmt"result: {r}")
+proc takeNextOne(self: var Test): Option[token.Token] =
+    let index = self.index + 1
+    if index > self.length - 1:
+        return none(token.Token)
+    self.index = index
+    return some(self.tokens[index])
+
+proc skipNextN(self: var Test, n: int) =
+    self.index += n
+
+proc skipNextOne(self: var Test) =
+    self.skipNextN(1)
+
+proc lookupNextOne(self: var Test): Option[token.Token] =
+    let index = self.index + 1
+    if index > self.length - 1:
+        return none(token.Token)
+    return some(self.tokens[index])
+
+proc parse(self: var Test) =
+    while true:
+        let v = self.takeNextOne()
+        if v.isNone():
+            break
+        let t = v.get()
+        case t.tokenType
+        of token.TokenType.TokenType_Single_Comment:
+            discard
+        of token.TokenType.TokenType_Multi_Comment:
+            discard
+        else:
+            var parser = parse.new(self.tokens[self.index..self.length-1])
+            let exprValue = parser.express(0)
+            if exprValue.isSome():
+                let r = self.iterExpr(exprValue.get())
+                echo(fmt"result: {r}")
+            self.skipNextN(parser.getUsedTokenTotal())
 
 proc newTest(tokens: seq[token.Token]): Test =
     result = Test(
-        tokens: tokens
+        tokens: tokens,
+        index: -1,
+        length: tokens.len()
     )
 
 proc main() =
     let stream = readFile("./resource/test.dog")
     var tokenParser = token_parse.new(stream)
     let tokens = token_handle.parse(tokenParser)
+    echo(tokens)
     var test = newTest(tokens)
     test.parse()
 

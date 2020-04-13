@@ -79,6 +79,9 @@ proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
             break
     return left
 
+proc getUsedTokenTotal*(self: Parse): int =
+    return self.index + 1
+
 proc tokenIsEnd(self: Parse, t: token.Token): bool =
     if t.tokenType == token.TokenType_Line_Break:
         return true
