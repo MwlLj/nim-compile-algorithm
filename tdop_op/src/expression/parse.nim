@@ -22,6 +22,8 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
     of token.TokenType.TokenType_Symbol_Parenthese_Left:
         parser.skipNextOne()
         return parser.express(0)
+    of token.TokenType.TokenType_Symbol_Parenthese_Right:
+        return none(express.ExprValue)
     else:
         return none(express.ExprValue)
 
@@ -89,9 +91,11 @@ proc tokenIsEnd(self: var Parse, t: token.Token): bool =
     if t.tokenType == token.TokenType_Line_Break:
         self.skipNextOne()
         return true
+    #[
     elif t.tokenType == token.TokenType_Symbol_Parenthese_Right:
         self.skipNextOne()
         return true
+    ]#
     return false
 
 proc getCurrentToken(self: var Parse): Option[token.Token] =
