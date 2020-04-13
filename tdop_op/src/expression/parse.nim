@@ -8,17 +8,20 @@ type
         index: int
         length: int
 
-proc getCurrentToken(self: Parse): Option[token.Token]
+proc getCurrentToken(self: var Parse): Option[token.Token]
 proc takeNextOne(self: var Parse): Option[token.Token]
 proc skipNextOne(self: var Parse)
 proc express*(self: var Parse, rbp: int): Option[express.ExprValue]
 
-proc nup(self: token.Token): Option[express.ExprValue] =
+proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
     case self.tokenType
     of token.TokenType.TokenType_Number_Des:
         return some(express.ExprValue(
             value: some(self.value)
         ))
+    of token.TokenType.TokenType_Symbol_Parenthese_Left:
+        parser.skipNextOne()
+        return parser.express(0)
     else:
         return none(express.ExprValue)
 
@@ -58,7 +61,7 @@ proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
     if t.isNone():
         return none(express.ExprValue)
     # 获取左操作数
-    var left = t.get().nup()
+    var left = t.get().nup(self)
     if left.isNone():
         return none(express.ExprValue)
     # 获取双目运算token
@@ -82,12 +85,15 @@ proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
 proc getUsedTokenTotal*(self: Parse): int =
     return self.index + 1
 
-proc tokenIsEnd(self: Parse, t: token.Token): bool =
+proc tokenIsEnd(self: var Parse, t: token.Token): bool =
     if t.tokenType == token.TokenType_Line_Break:
+        return true
+    elif t.tokenType == token.TokenType_Symbol_Parenthese_Right:
+        self.skipNextOne()
         return true
     return false
 
-proc getCurrentToken(self: Parse): Option[token.Token] =
+proc getCurrentToken(self: var Parse): Option[token.Token] =
     if self.index > self.length - 1:
         return none(token.Token)
     let t = self.tokens[self.index]
