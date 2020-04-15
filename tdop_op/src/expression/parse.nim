@@ -26,17 +26,22 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
         if curToken.isNone():
             # panic
             return none(express.ExprValue)
-        if curToken.get().tokenType == token.TokenType.TokenType_Number_Des:
-            return some(express.ExprValue(
-                exp: some(express.Expr(
-                    right: some(express.ExprValue(
-                        value: some(curToken.get().value)
-                    )),
-                    op: self.value
-                ))
+        # if curToken.get().tokenType == token.TokenType.TokenType_Number_Des:
+        #     return some(express.ExprValue(
+        #         exp: some(express.Expr(
+        #             right: some(express.ExprValue(
+        #                 value: some(curToken.get().value)
+        #             )),
+        #             op: self.value
+        #         ))
+        #     ))
+        # else:
+        return some(express.ExprValue(
+            exp: some(express.Expr(
+                right: curToken.get().nup(parser),
+                op: self.value
             ))
-        else:
-            return curToken.get().nup(parser)
+        ))
     of token.TokenType.TokenType_Symbol_Parenthese_Left:
         parser.skipNextOne()
         return parser.express(0)
