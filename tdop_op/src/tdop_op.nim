@@ -31,7 +31,10 @@ proc iterExpr(self: Test, value: express.ExprValue): int64 =
         of '+':
             return left + right
         of '-':
-            return left - right
+            if exp.left.isNone() and exp.right.isSome():
+                return -1 * right
+            else:
+                return left - right
         of '*':
             return left * right
         of '/':
