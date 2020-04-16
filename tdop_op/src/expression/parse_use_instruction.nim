@@ -38,9 +38,9 @@ proc led(self: token.Token, parser: var Parse, left: int64): (int64, bool) =
     of token.TokenType.TokenType_Symbol_Multiplication:
         return (left * parser.express(2)[0], true)
     of token.TokenType.TokenType_Symbol_Plus:
-        return (left + parser.express(2)[0], true)
+        return (left + parser.express(1)[0], true)
     of token.TokenType.TokenType_Symbol_Minus:
-        return (left - parser.express(2)[0], true)
+        return (left - parser.express(1)[0], true)
     of token.TokenType.TokenType_Symbol_Division:
         return (left div parser.express(2)[0], true)
     else:
