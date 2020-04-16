@@ -1,4 +1,5 @@
 import "expression/parse"
+import "expression/parse_use_instruction" as parserUI
 import "expression/express"
 from "../../lexical_analysis/src/token/token" as token import nil
 # import "../../lexical_analysis/src/token/token" as token
@@ -91,7 +92,7 @@ proc newTest(tokens: seq[token.Token]): Test =
         length: tokens.len()
     )
 
-proc main() =
+proc parseTest() =
     let stream = readFile("./resource/test.dog")
     var tokenParser = token_parse.new(stream)
     let tokens = token_handle.parse(tokenParser)
@@ -99,5 +100,19 @@ proc main() =
     var test = newTest(tokens)
     test.parse()
 
+proc parseUseInstructionTest() =
+    let stream = readFile("./resource/test.dog")
+    var tokenParser = token_parse.new(stream)
+    let tokens = token_handle.parse(tokenParser)
+    echo(tokens)
+    var parser = parserUI.new(tokens)
+    let r = parser.express(0)
+    echo(r)
+
+proc main() =
+    # parseTest()
+    parseUseInstructionTest()
+
 when isMainModule:
     main()
+
