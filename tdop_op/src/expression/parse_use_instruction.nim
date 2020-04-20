@@ -69,9 +69,31 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
 proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[express.Expr] =
     case self.tokenType
     of token.TokenType.TokenType_Symbol_Multiplication:
+        if left.value.isSome():
+            if left.value.get().i64.isSome():
+                parser.opts.add(Opt(
+                    instruction: Instruction_Load_iConst,
+                    values: @[OptValue(
+                        integer: some(left.value.get().i64.get())
+                    )]
+                ))
+        let right = parser.express(2)
+        if right.isSome():
+            let r = right.get()
+            if r.value.isSome():
+                if r.value.get().i64.isSome():
+                    parser.opts.add(Opt(
+                        instruction: Instruction_Load_iConst,
+                        values: @[OptValue(
+                            integer: some(r.value.get().i64.get())
+                        )]
+                    ))
+        parser.opts.add(Opt(
+            instruction: Instruction_Multiplication
+        ))
         return some(express.Expr(
             left: some(left),
-            right: parser.express(2),
+            right: right,
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Plus:
