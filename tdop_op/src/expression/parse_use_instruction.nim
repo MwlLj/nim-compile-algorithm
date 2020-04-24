@@ -2,6 +2,19 @@ import "../../../lexical_analysis/src/token/token" as token
 import "express"
 import options
 
+#[
+  1 || 2 && 3
+  #0 expr_start
+  #1 iconst 1
+  #2 opt_or #5
+  #3 iconst 2
+  #4 opt_or_calc
+  #5 opt_and #8
+  #6 iconst 3
+  #7 opt_and_calc
+  #8 expr_end
+]#
+
 type
     Instruction = enum
         Instruction_Load_iConst,
