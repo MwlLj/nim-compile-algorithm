@@ -40,6 +40,8 @@ type
         TokenType_Symbol_Colon,
         # 感叹号 !
         TokenType_Symbol_Exclamation_Mark,
+        # ++
+        TokenType_Symbol_Plus_Plus,
         # 小于号 <
         TokenType_Symbol_Less_Than,
         # 大于号 >

@@ -80,6 +80,13 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
             right: parser.express(2),
             op: self.value
         ))
+    of token.TokenType.TokenType_Symbol_Plus_Plus:
+        # 生成指令时, 先生成计算的指令, 最后需要对 curToken + 1
+        return some(express.Expr(
+            left: some(left),
+            right: parser.express(0),
+            op: self.value
+        ))
     else:
         return none(express.Expr)
 
