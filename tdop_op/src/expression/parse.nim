@@ -50,6 +50,10 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
     else:
         return none(express.ExprValue)
 
+#[
+# 进入 led 时: parser的curToken 一定是 操作数
+# 离开 led 时: parser的curToken 一定是 操作符
+]#
 proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[express.Expr] =
     case self.tokenType
     of token.TokenType.TokenType_Symbol_Multiplication:
@@ -80,6 +84,14 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
         return none(express.Expr)
 
 # 目的: 计算右操作数
+#[
+# 直到检测到 传入的 rbp >= 下一个操作符的 rbp
+# 比如:
+#   1 + 2 * 3 + 4
+# 使用第一个+号 调用 express 方法
+#   下一个操作符是 *号, *的rbp > +的rbp => 无法结束, 继续找下一个
+#   下一个操作符是 +号, +的rbp 肯定是等于 +的rbp => 结束 此次 express 的调用
+]#
 proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
     # 获取当前token (单目运算 / 数字)
     let t = self.getCurrentToken()
@@ -89,7 +101,7 @@ proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
     var left = t.get().nup(self)
     if left.isNone():
         return none(express.ExprValue)
-    # 获取双目运算token
+    # 获取运算token
     var optToken = self.takeNextOne()
     if optToken.isNone():
         return left
