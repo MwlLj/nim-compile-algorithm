@@ -13,6 +13,8 @@ import "line"
 import "plus"
 import "minus"
 import "multiplication"
+import "and" as optand
+import "or" as optor
 import options
 
 proc parse*(self: var parse.Parse): seq[token.Token] =
@@ -66,7 +68,9 @@ proc parse*(self: var parse.Parse): seq[token.Token] =
         of '*':
             multiplication.handleMultiplication(self)
         of '&':
-            discard
+            optand.handleAnd(self)
+        of '|':
+            optor.handleOr(self)
         of '#':
             discard
         of '@':

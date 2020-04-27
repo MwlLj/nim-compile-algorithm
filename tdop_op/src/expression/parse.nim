@@ -59,25 +59,25 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
     of token.TokenType.TokenType_Symbol_Multiplication:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(2),
+            right: parser.express(50),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Plus:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(1),
+            right: parser.express(40),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Minus:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(1),
+            right: parser.express(40),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Division:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(2),
+            right: parser.express(50),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Plus_Plus:
@@ -85,6 +85,18 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
         return some(express.Expr(
             left: some(left),
             right: parser.express(0),
+            op: self.value
+        ))
+    of token.TokenType.TokenType_Symbol_And:
+        return some(express.Expr(
+            left: some(left),
+            right: parser.express(20),
+            op: self.value
+        ))
+    of token.TokenType.TokenType_Symbol_Or:
+        return some(express.Expr(
+            left: some(left),
+            right: parser.express(20),
             op: self.value
         ))
     else:

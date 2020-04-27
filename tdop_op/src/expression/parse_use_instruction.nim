@@ -19,7 +19,12 @@ type
     Instruction = enum
         Instruction_Load_iConst,
         Instruction_Plus,
-        Instruction_Multiplication
+        Instruction_Multiplication,
+        Instruction_Prefix_Minus,
+        Instruction_Opt_Or,
+        Instruction_Opt_Or_Calc,
+        Instruction_Opt_And,
+        Instruction_Opt_And_Calc
 
 type
     OptValue = object
@@ -55,19 +60,24 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
         if curToken.isNone():
             # panic
             return none(express.ExprValue)
-        # if curToken.get().tokenType == token.TokenType.TokenType_Number_Des:
-        #     return some(express.ExprValue(
-        #         exp: some(express.Expr(
-        #             right: some(express.ExprValue(
-        #                 value: some(curToken.get().value)
-        #             )),
-        #             op: self.value
-        #         ))
-        #     ))
-        # else:
+        var right: Option[express.ExprValue]
+        let n = curToken.get().nup(parser)
+        if n.isNone():
+            right = n
+        else:
+            if n.get().value.isSome():
+                parser.opts.add(Opt(
+                    instruction: Instruction_Load_iConst,
+                    values: @[OptValue(
+                        integer: some(n.get().value.get().i64.get())
+                    )]
+                ))
+            parser.opts.add(Opt(
+                instruction: Instruction_Prefix_Minus
+            ))
         return some(express.ExprValue(
             exp: some(express.Expr(
-                right: curToken.get().nup(parser),
+                right: right,
                 op: self.value
             ))
         ))

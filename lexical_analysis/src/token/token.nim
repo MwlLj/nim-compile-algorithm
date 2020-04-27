@@ -70,6 +70,10 @@ type
         TokenType_Symbol_Less_Than_Equal,
         # >=
         TokenType_Symbol_More_Than_Equal,
+        # &&
+        TokenType_Symbol_And,
+        # ||
+        TokenType_Symbol_Or,
         # 右箭头 ->
         TokenType_Symbol_Right_Arrow,
         # 单行注释 //
