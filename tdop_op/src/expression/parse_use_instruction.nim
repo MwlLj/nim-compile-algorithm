@@ -100,7 +100,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
                         integer: some(left.value.get().i64.get())
                     )]
                 ))
-        let right = parser.express(2)
+        let right = parser.express(50)
         if right.isSome():
             let r = right.get()
             if r.value.isSome():
@@ -128,7 +128,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
                         integer: some(left.value.get().i64.get())
                     )]
                 ))
-        let right = parser.express(1)
+        let right = parser.express(40)
         if right.isSome():
             let r = right.get()
             if r.value.isSome():
@@ -150,13 +150,86 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
     of token.TokenType.TokenType_Symbol_Minus:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(1),
+            right: parser.express(40),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Division:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(2),
+            right: parser.express(50),
+            op: self.value
+        ))
+    of token.TokenType.TokenType_Symbol_And:
+        echo("and ...")
+        if left.value.isSome():
+            if left.value.get().i64.isSome():
+                parser.opts.add(Opt(
+                    instruction: Instruction_Load_iConst,
+                    values: @[OptValue(
+                        integer: some(left.value.get().i64.get())
+                    )]
+                ))
+        let optIndex = parser.opts.len()
+        parser.opts.add(Opt(
+            instruction: Instruction_Opt_And
+        ))
+        let right = parser.express(30)
+        if right.isSome():
+            let r = right.get()
+            if r.value.isSome():
+                if r.value.get().i64.isSome():
+                    parser.opts.add(Opt(
+                        instruction: Instruction_Load_iConst,
+                        values: @[OptValue(
+                            integer: some(r.value.get().i64.get())
+                        )]
+                    ))
+        parser.opts.add(Opt(
+            instruction: Instruction_Opt_And_Calc
+        ))
+        # 更新 optIndex 的跳转数
+        parser.opts[optIndex].values = @[OptValue(
+            integer: some((int64)parser.opts.len())
+            )]
+        return some(express.Expr(
+            left: some(left),
+            right: right,
+            op: self.value
+        ))
+    of token.TokenType.TokenType_Symbol_Or:
+        if left.value.isSome():
+            if left.value.get().i64.isSome():
+                parser.opts.add(Opt(
+                    instruction: Instruction_Load_iConst,
+                    values: @[OptValue(
+                        integer: some(left.value.get().i64.get())
+                    )]
+                ))
+        let optIndex = parser.opts.len()
+        parser.opts.add(Opt(
+            instruction: Instruction_Opt_Or
+        ))
+        let right = parser.express(30)
+        if right.isSome():
+            let r = right.get()
+            if r.value.isSome():
+                if r.value.get().i64.isSome():
+                    parser.opts.add(Opt(
+                        instruction: Instruction_Load_iConst,
+                        values: @[OptValue(
+                            integer: some(r.value.get().i64.get())
+                        )]
+                    ))
+        parser.opts.add(Opt(
+            instruction: Instruction_Opt_Or_Calc
+        ))
+        # 更新 optIndex 的跳转数
+        parser.opts[optIndex].values = @[OptValue(
+            integer: some((int64)parser.opts.len())
+            )]
+        return some(express.Expr(
+            left: some(left),
+            right: right,
             op: self.value
         ))
     else:

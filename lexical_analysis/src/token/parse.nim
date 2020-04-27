@@ -73,6 +73,15 @@ proc addString*(self: var parse.Parse, tokenType: token.TokenType, s: string) =
         )
     ))
 
+proc addString*(self: var parse.Parse, tokenType: token.TokenType, s: string, lbp: int) =
+    self.tokens.add(token.Token(
+        tokenType: tokenType,
+        value: token.Value(
+            str: some(s)
+        ),
+        lbp: lbp
+    ))
+
 proc addInt64*(self: var parse.Parse, tokenType: token.TokenType, i: int64) =
     self.tokens.add(token.Token(
         tokenType: tokenType,

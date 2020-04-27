@@ -110,6 +110,14 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
 # 使用第一个+号 调用 express 方法
 #   下一个操作符是 *号, *的rbp > +的rbp => 无法结束, 继续找下一个
 #   下一个操作符是 +号, +的rbp 肯定是等于 +的rbp => 结束 此次 express 的调用
+#
+# 再比如:
+#   1 && 2 && 3
+# 当检测到第一个 && 后, 检测到第二个 && 时, 发现与自身的rbp一致, 那么 express 结束
+# 这一点, 在计算跳转指令时很有用:
+#   占位 opt_or ??? (??? 表示的是跳转的指令位置)
+#   express()
+#   这里可以的到跳转的位置, 用这里的指令位置更新上面的 ???
 ]#
 proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
     # 获取当前token (单目运算 / 数字)

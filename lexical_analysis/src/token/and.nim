@@ -10,7 +10,7 @@ proc handleAnd*(self: var parse.Parse) =
     let c = v.get()
     case c
     of '&':
-        self.addString(token.TokenType.TokenType_Symbol_And, "&&")
+        self.addString(token.TokenType.TokenType_Symbol_And, "&&", 30)
         self.skipNextOne()
         return
     else:

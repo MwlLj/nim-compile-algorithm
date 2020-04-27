@@ -10,7 +10,7 @@ proc handleOr*(self: var parse.Parse) =
     let c = v.get()
     case c
     of '|':
-        self.addString(token.TokenType.TokenType_Symbol_Or, "||")
+        self.addString(token.TokenType.TokenType_Symbol_Or, "||", 30)
         self.skipNextOne()
         return
     else:
