@@ -6,6 +6,8 @@ type
         left*: Option[ExprValue]
         right*: Option[ExprValue]
         op*: token.Value
+        # 记录表达式的类型
+        typ: string
 
     ExprValue* = object
         exp*: Option[Expr]
