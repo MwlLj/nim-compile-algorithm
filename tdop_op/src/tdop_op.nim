@@ -111,8 +111,8 @@ proc parseUseInstructionTest() =
     parser.printOpts()
 
 proc main() =
-    # parseTest()
-    parseUseInstructionTest()
+    parseTest()
+    # parseUseInstructionTest()
 
 when isMainModule:
     main()
