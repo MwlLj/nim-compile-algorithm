@@ -19,6 +19,7 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
         return some(express.ExprValue(
             value: some(self.value)
         ))
+    #[
     of token.TokenType.TokenType_Symbol_Minus:
         # 负号
         parser.skipNextOne()
@@ -39,6 +40,15 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
         return some(express.ExprValue(
             exp: some(express.Expr(
                 right: curToken.get().nup(parser),
+                op: self.value
+            ))
+        ))
+    ]#
+    of token.TokenType.TokenType_Symbol_Minus:
+        parser.skipNextOne()
+        return some(express.ExprValue(
+            exp: some(express.Expr(
+                right: parser.express(100),
                 op: self.value
             ))
         ))
