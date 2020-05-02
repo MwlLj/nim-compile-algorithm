@@ -11,7 +11,7 @@ type
 proc getCurrentToken(self: var Parse): Option[token.Token]
 proc takeNextOne(self: var Parse): Option[token.Token]
 proc skipNextOne(self: var Parse)
-proc express*(self: var Parse, rbp: int): Option[express.ExprValue]
+proc express*(self: var Parse, rbp: int, isRight: bool = false, isDefine: bool = false): Option[express.ExprValue]
 
 proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
     case self.tokenType
@@ -52,6 +52,10 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
                 op: self.value
             ))
         ))
+    of token.TokenType.TokenType_Id:
+        return some(express.ExprValue(
+            value: some(self.value)
+        ))
     of token.TokenType.TokenType_Symbol_Parenthese_Left:
         parser.skipNextOne()
         return parser.express(0)
@@ -66,30 +70,30 @@ proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
 #     后缀运算: parser的curToken 一定是 操作符 (直接跳过)
 # 离开 led 时: parser的curToken 一定是 操作符
 ]#
-proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[express.Expr] =
+proc led(self: token.Token, parser: var Parse, left: express.ExprValue, isDefine: bool = false): Option[express.Expr] =
     case self.tokenType
     of token.TokenType.TokenType_Symbol_Multiplication:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(50),
+            right: parser.express(self.lbp),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Plus:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(40),
+            right: parser.express(self.lbp),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Minus:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(40),
+            right: parser.express(self.lbp),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Division:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(50),
+            right: parser.express(self.lbp),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Plus_Plus:
@@ -120,13 +124,25 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
     of token.TokenType.TokenType_Symbol_And:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(20),
+            right: parser.express(self.lbp),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Or:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(20),
+            right: parser.express(self.lbp),
+            op: self.value
+        ))
+    of token.TokenType.TokenType_Symbol_Assignment:
+        if left.exp.isSome():
+            echo("left is not assign")
+            raise newException(OSError, "left is not assign")
+        return some(express.Expr(
+            left: some(left),
+            #[ 
+            右结合, 可能是 a = b = 1
+             ]#
+            right: parser.express(self.lbp, true),
             op: self.value
         ))
     else:
@@ -149,7 +165,10 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
 #   express()
 #   这里可以的到跳转的位置, 用这里的指令位置更新上面的 ???
 ]#
-proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
+#[
+isRight: 控制是否是右结合, 默认是左结合
+]#
+proc express*(self: var Parse, rbp: int, isRight: bool, isDefine: bool): Option[express.ExprValue] =
     # 获取当前token (单目运算 / 数字)
     let t = self.getCurrentToken()
     if t.isNone():
@@ -163,7 +182,7 @@ proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
     if optToken.isNone():
         return left
     # 查找表达式中的每一个运算符, 直到找到比rbp小的运算符为止 (双目: lbp == rbp, 这里取 optToken.lbp)
-    while rbp < optToken.get().lbp:
+    while (rbp < optToken.get().lbp) or (isRight and (rbp <= optToken.get().lbp)):
         self.skipNextOne()
         let l = optToken.get().led(self, left.get())
         if l.isNone():

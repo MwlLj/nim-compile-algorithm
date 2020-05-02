@@ -43,9 +43,16 @@ proc iterExpr(self: Test, value: express.ExprValue): int64 =
         else:
             discard
     elif value.value.isSome():
-        let v = value.value.get().i64.get()
-        echo(v)
-        return v
+        let va = value.value.get()
+        if va.i64.isSome():
+            let v = va.i64.get()
+            echo(v)
+            return v
+        elif va.str.isSome():
+            echo(va.str.get())
+            return 0
+        else:
+            return 0
 
 proc takeNextOne(self: var Test): Option[token.Token] =
     let index = self.index + 1
