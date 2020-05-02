@@ -13,6 +13,7 @@ import "line"
 import "plus"
 import "minus"
 import "multiplication"
+import "colon"
 import "and" as optand
 import "or" as optor
 import options
@@ -48,7 +49,7 @@ proc parse*(self: var parse.Parse): seq[token.Token] =
         of '?':
             discard
         of ':':
-            self.addChar(token.TokenType.TokenType_Symbol_Colon, c)
+            colon.handleColon(self)
         of '(':
             self.addChar(token.TokenType.TokenType_Symbol_Parenthese_Left, c)
         of ')':

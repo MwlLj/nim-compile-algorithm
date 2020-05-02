@@ -10,10 +10,10 @@ proc handleAssignment*(self: var parse.Parse) =
     let c = v.get()
     case c
     of '=':
-        self.addString(token.TokenType.TokenType_Symbol_Equal, "==")
+        self.addString(token.TokenType.TokenType_Symbol_Equal, "==", 20)
         self.skipNextOne()
         return
     else:
-        self.addChar(token.TokenType.TokenType_Symbol_Assignment, '=')
+        self.addChar(token.TokenType.TokenType_Symbol_Assignment, '=', 10)
         return
 
