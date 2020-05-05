@@ -100,7 +100,7 @@ proc newTest(tokens: seq[token.Token]): Test =
     )
 
 proc parseTest() =
-    let stream = readFile("./resource/test.dog")
+    let stream = readFile("./resource/test.lion")
     var tokenParser = token_parse.new(stream)
     let tokens = token_handle.parse(tokenParser)
     echo(tokens)
@@ -108,7 +108,7 @@ proc parseTest() =
     test.parse()
 
 proc parseUseInstructionTest() =
-    let stream = readFile("./resource/test.dog")
+    let stream = readFile("./resource/test.lion")
     var tokenParser = token_parse.new(stream)
     let tokens = token_handle.parse(tokenParser)
     echo(tokens)
@@ -118,8 +118,8 @@ proc parseUseInstructionTest() =
     parser.printOpts()
 
 proc main() =
-    parseTest()
-    # parseUseInstructionTest()
+    # parseTest()
+    parseUseInstructionTest()
 
 when isMainModule:
     main()

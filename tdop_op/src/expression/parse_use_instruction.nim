@@ -1,3 +1,5 @@
+import "../opt/optcode"
+import "../enums/expr"
 import "../../../lexical_analysis/src/token/token" as token
 import "express"
 import options
@@ -16,19 +18,9 @@ import options
 ]#
 
 type
-    Instruction = enum
-        Instruction_Load_iConst,
-        Instruction_Plus,
-        Instruction_Multiplication,
-        Instruction_Prefix_Minus,
-        Instruction_Opt_Or,
-        Instruction_Opt_Or_Calc,
-        Instruction_Opt_And,
-        Instruction_Opt_And_Calc
-
-type
     OptValue = object
         integer: Option[int64]
+        variable: Option[string]
 
 type
     Opt = object
@@ -40,56 +32,68 @@ type
         tokens: seq[token.Token]
         index: int
         length: int
+        isEnd: bool
         opts: seq[Opt]
 
 proc getCurrentToken(self: var Parse): Option[token.Token]
 proc takeNextOne(self: var Parse): Option[token.Token]
+proc lookupNextOne(self: var Parse): Option[token.Token]
 proc skipNextOne(self: var Parse)
-proc express*(self: var Parse, rbp: int): Option[express.ExprValue]
+proc express*(self: var Parse, rbp: int, isRight: bool = false, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue]
 
-proc nup(self: token.Token, parser: var Parse): Option[express.ExprValue] =
+#[ 
+1. 终结符(操作数 / 右括号) + 换行 是一条完整的语句
+2. 非终结符(左括号 / 操作符) + 换行 是非法的语句
+ ]#
+proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue] =
+    var result: Option[express.ExprValue]
     case self.tokenType
     of token.TokenType.TokenType_Number_Des:
-        return some(express.ExprValue(
+        result = some(express.ExprValue(
             value: some(self.value)
         ))
     of token.TokenType.TokenType_Symbol_Minus:
         # 负号
         parser.skipNextOne()
-        let curToken = parser.getCurrentToken()
-        if curToken.isNone():
-            # panic
-            return none(express.ExprValue)
-        var right: Option[express.ExprValue]
-        let n = curToken.get().nup(parser)
-        if n.isNone():
-            right = n
-        else:
-            if n.get().value.isSome():
-                parser.opts.add(Opt(
-                    instruction: Instruction_Load_iConst,
-                    values: @[OptValue(
-                        integer: some(n.get().value.get().i64.get())
-                    )]
-                ))
+        let right = parser.express(100, exprType=exprType)
+        if right.get().value.isSome():
             parser.opts.add(Opt(
-                instruction: Instruction_Prefix_Minus
+                instruction: Instruction_Load_iConst,
+                values: @[OptValue(
+                    integer: some(right.get().value.get().i64.get())
+                )]
             ))
-        return some(express.ExprValue(
+        parser.opts.add(Opt(
+            instruction: Instruction_Prefix_Minus
+        ))
+        result = some(express.ExprValue(
             exp: some(express.Expr(
                 right: right,
                 op: self.value
             ))
         ))
+    of token.TokenType.TokenType_Id:
+        result = some(express.ExprValue(
+            value: some(self.value)
+        ))
     of token.TokenType.TokenType_Symbol_Parenthese_Left:
         parser.skipNextOne()
-        return parser.express(0)
+        return parser.express(0, exprType=expr.ExprType.ExprType_Normal)
     of token.TokenType.TokenType_Symbol_Parenthese_Right:
-        return none(express.ExprValue)
+        result = none(express.ExprValue)
     else:
         return none(express.ExprValue)
+    # 可以到达这里的是 操作数 / 右小括号 => 判断下一个是否是换行
+    let nextToken = parser.lookupNextOne()
+    if nextToken.isNone():
+        # 下一个 token 是空的 => 操作数 / 小括号 后是是结束 => 返回 本次结果
+        return result
+    if (nextToken.get().tokenType == token.TokenType.TokenType_Line_Break) or (nextToken.get().tokenType == token.TokenType.TokenType_Back_Slash_R):
+        parser.skipNextOne()
+        parser.isEnd = true
+    return result
 
-proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[express.Expr] =
+proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.Expr] =
     case self.tokenType
     of token.TokenType.TokenType_Symbol_Multiplication:
         if left.value.isSome():
@@ -100,7 +104,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
                         integer: some(left.value.get().i64.get())
                     )]
                 ))
-        let right = parser.express(50)
+        let right = parser.express(self.lbp, exprType=exprType)
         if right.isSome():
             let r = right.get()
             if r.value.isSome():
@@ -128,7 +132,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
                         integer: some(left.value.get().i64.get())
                     )]
                 ))
-        let right = parser.express(40)
+        let right = parser.express(self.lbp, exprType=exprType)
         if right.isSome():
             let r = right.get()
             if r.value.isSome():
@@ -150,17 +154,16 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
     of token.TokenType.TokenType_Symbol_Minus:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(40),
+            right: parser.express(self.lbp, exprType=exprType),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Division:
         return some(express.Expr(
             left: some(left),
-            right: parser.express(50),
+            right: parser.express(self.lbp, exprType=exprType),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_And:
-        echo("and ...")
         if left.value.isSome():
             if left.value.get().i64.isSome():
                 parser.opts.add(Opt(
@@ -173,7 +176,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
         parser.opts.add(Opt(
             instruction: Instruction_Opt_And
         ))
-        let right = parser.express(30)
+        let right = parser.express(self.lbp, exprType=exprType)
         if right.isSome():
             let r = right.get()
             if r.value.isSome():
@@ -209,7 +212,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
         parser.opts.add(Opt(
             instruction: Instruction_Opt_Or
         ))
-        let right = parser.express(30)
+        let right = parser.express(self.lbp, exprType=exprType)
         if right.isSome():
             let r = right.get()
             if r.value.isSome():
@@ -232,17 +235,58 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue): Option[
             right: right,
             op: self.value
         ))
+    of token.TokenType.TokenType_Symbol_Assignment:
+        if left.exp.isSome():
+            echo("left is not assign")
+            raise newException(OSError, "left is not assign")
+        let right = parser.express(self.lbp, true, exprType=exprType)
+        if right.isSome():
+            let r = right.get()
+            if r.value.isSome():
+                if r.value.get().i64.isSome():
+                    parser.opts.add(Opt(
+                        instruction: Instruction_Load_iConst,
+                        values: @[OptValue(
+                            integer: some(r.value.get().i64.get())
+                        )]
+                    ))
+        var instruction: Instruction
+        case exprType
+        of expr.ExprType.ExprType_Normal:
+            instruction = Instruction_Assignment
+        of expr.ExprType.ExprType_Var_Define:
+            instruction = Instruction_Var_Define
+        parser.opts.add(Opt(
+            instruction: instruction,
+            values: @[OptValue(
+                variable: some(left.value.get().str.get())
+            )]
+        ))
+        #[ 
+        虚拟机:
+            1. 从栈中获取栈顶元素
+            2. 将栈顶元素 新增/更新 到左值中
+            3. 将赋值的计算结果入栈
+         ]#
+        return some(express.Expr(
+            left: some(left),
+            #[ 
+            右结合, 可能是 a = b = 1
+             ]#
+            right: right,
+            op: self.value
+        ))
     else:
         return none(express.Expr)
 
 # 目的: 计算右操作数
-proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
+proc express*(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType): Option[express.ExprValue] =
     # 获取当前token (单目运算 / 数字)
     let t = self.getCurrentToken()
     if t.isNone():
         return none(express.ExprValue)
     # 获取左操作数
-    var left = t.get().nup(self)
+    var left = t.get().nup(self, exprType=exprType)
     if left.isNone():
         return none(express.ExprValue)
     # 获取双目运算token
@@ -250,9 +294,9 @@ proc express*(self: var Parse, rbp: int): Option[express.ExprValue] =
     if optToken.isNone():
         return left
     # 查找表达式中的每一个运算符, 直到找到比rbp小的运算符为止 (双目: lbp == rbp, 这里取 optToken.lbp)
-    while rbp < optToken.get().lbp:
+    while (not self.isEnd) and ((rbp < optToken.get().lbp) or (isRight and (rbp <= optToken.get().lbp))):
         self.skipNextOne()
-        let l = optToken.get().led(self, left.get())
+        let l = optToken.get().led(self, left.get(), exprType=exprType)
         if l.isNone():
             break
         left = some(express.ExprValue(
@@ -267,20 +311,27 @@ proc getUsedTokenTotal*(self: Parse): int =
     return self.index + 1
 
 proc tokenIsEnd(self: var Parse, t: token.Token): bool =
-    if t.tokenType == token.TokenType_Line_Break:
+    if t.tokenType == token.TokenType_Semicolon:
         self.skipNextOne()
         return true
-    #[
-    elif t.tokenType == token.TokenType_Symbol_Parenthese_Right:
-        self.skipNextOne()
-        return true
-    ]#
     return false
 
 proc getCurrentToken(self: var Parse): Option[token.Token] =
     if self.index > self.length - 1:
         return none(token.Token)
-    let t = self.tokens[self.index]
+    var t = self.tokens[self.index]
+    # 如果当前的 token 是 换行 => 跳过
+    while true:
+        if (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R):
+            self.skipNextOne()
+        else:
+            # 当前的 t 不是 换行
+            break
+        let tok = self.getCurrentToken()
+        if tok.isNone():
+            return none(token.Token)
+        else:
+            t = tok.get()
     if self.tokenIsEnd(t):
         return none(token.Token)
         # return some(t)
@@ -291,10 +342,28 @@ proc takeNextOne(self: var Parse): Option[token.Token] =
     if index > self.length - 1:
         return none(token.Token)
     self.index = index
-    let t = self.tokens[self.index]
+    var t = self.tokens[self.index]
+    # 如果当前的 token 是 换行 => 跳过
+    while true:
+        if (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R):
+            self.skipNextOne()
+        else:
+            # 当前的 t 不是 换行
+            break
+        let tok = self.getCurrentToken()
+        if tok.isNone():
+            return none(token.Token)
+        else:
+            t = tok.get()
     if self.tokenIsEnd(t):
         return none(token.Token)
     return some(t)
+
+proc lookupNextOne(self: var Parse): Option[token.Token] =
+    let index = self.index + 1
+    if index > self.length - 1:
+        return none(token.Token)
+    return some(self.tokens[index])
 
 proc skipNextOne(self: var Parse) =
     self.index += 1

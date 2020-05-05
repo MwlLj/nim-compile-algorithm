@@ -74,6 +74,8 @@ type
         TokenType_Symbol_And,
         # ||
         TokenType_Symbol_Or,
+        # ;
+        TokenType_Semicolon,
         # 右箭头 ->
         TokenType_Symbol_Right_Arrow,
         # 单行注释 //

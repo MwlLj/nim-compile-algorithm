@@ -81,7 +81,7 @@ proc parse*(self: var parse.Parse): seq[token.Token] =
         of '%':
             discard
         of ';':
-            discard
+            self.addChar(token.TokenType.TokenType_Semicolon, c)
         else:
             if self.isIDStart(c):
                 var id: string
