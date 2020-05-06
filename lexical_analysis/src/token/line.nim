@@ -26,7 +26,7 @@ proc isLineEnd*(self: var parse.Parse): bool =
     return false
 
 proc handleBackSlashR*(self: var parse.Parse) =
-    self.skipNextOne()
+    # self.skipNextOne()
     let v = self.lookupNextOne()
     if v.isNone():
         # 下一个是字符串的结尾
@@ -42,6 +42,6 @@ proc handleBackSlashR*(self: var parse.Parse) =
         return
 
 proc handleBackSlashN*(self: var parse.Parse) =
-    self.skipNextOne()
+    # self.skipNextOne()
     self.addChar(token.TokenType.TokenType_Line_Break, '\n')
 

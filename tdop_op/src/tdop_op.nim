@@ -114,7 +114,7 @@ proc parseUseInstructionTest() =
     echo(tokens)
     var parser = parserUI.new(tokens)
     let r = parser.express(0)
-    echo(r)
+    # echo(r)
     parser.printOpts()
 
 proc main() =
