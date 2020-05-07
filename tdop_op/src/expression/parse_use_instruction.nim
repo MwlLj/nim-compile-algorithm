@@ -338,16 +338,15 @@ proc express*(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType)
     if optToken.isNone():
         return left
     ]#
-    var optToken = self.lookupNextOneExceptLinebreak()
-    if optToken.isNone():
-        return left
-    # 检测下一个token是否是结束符
     if self.nupOperandCb != nil:
         self.nupOperandCb(self)
     if self.isEnd:
         return left
-    else:
-        self.skipNextOne()
+    # 检测下一个token是否是结束符
+    var optToken = self.lookupNextOneExceptLinebreak()
+    if optToken.isNone():
+        return left
+    self.skipNextOne()
     # 查找表达式中的每一个运算符, 直到找到比rbp小的运算符为止 (双目: lbp == rbp, 这里取 optToken.lbp)
     while (not self.isEnd) and ((rbp < optToken.get().lbp) or (isRight and (rbp <= optToken.get().lbp))):
         self.skipNextOne()
@@ -358,6 +357,8 @@ proc express*(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType)
         left = some(express.ExprValue(
             exp: some(l.get())
         ))
+        if self.isEnd:
+            break
         optToken = self.getCurrentToken()
         if optToken.isNone():
             break

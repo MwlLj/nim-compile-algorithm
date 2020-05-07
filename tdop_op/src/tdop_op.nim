@@ -112,10 +112,15 @@ proc parseUseInstructionTest() =
     var tokenParser = token_parse.new(stream)
     let tokens = token_handle.parse(tokenParser)
     echo(tokens)
-    var parser = parserUI.new(tokens)
-    let r = parser.express(0)
-    # echo(r)
-    parser.printOpts()
+    # 处理多条表达式语句
+    let tokenLength = tokens.len()
+    var index = 0
+    while index < tokenLength:
+        var parser = parserUI.new(tokens[index..tokenLength-1])
+        let r = parser.express(0)
+        # echo(r)
+        index += parser.getUsedTokenTotal()
+        parser.printOpts()
 
 proc main() =
     # parseTest()
