@@ -37,6 +37,8 @@ type
         opts: seq[Opt]
         # nup 方法的 操作数回调
         nupOperandCb: proc(parser: var Parse)
+        # 返回值: 是否遇到结束符
+        operandEndCb: proc(t: token.Token): bool
 
 type operandCallback = proc(parser: var Parse)
 
@@ -48,6 +50,11 @@ proc lookupNextOneExceptLinebreak(self: var Parse): Option[token.Token]
 proc skipNextOne(self: var Parse)
 proc express*(self: var Parse, rbp: int, isRight: bool = false, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue]
 
+proc operandEndNormalCb(t: token.Token): bool =
+    if (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R):
+        return true
+    return false
+
 # 小括号结束回调
 # proc parenthese
 # 操作数+换行结束回调
@@ -57,9 +64,16 @@ proc operandLinebreak(parser: var Parse) =
     if nextToken.isNone():
         # 下一个 token 是空的 => 操作数 / 小括号 后是是结束 => 返回 本次结果
         return
+    if parser.operandEndCb != nil:
+        if parser.operandEndCb(nextToken.get()):
+            # 检测到结束
+            parser.skipNextOne()
+            parser.isEnd = true
+    #[
     if (nextToken.get().tokenType == token.TokenType.TokenType_Line_Break) or (nextToken.get().tokenType == token.TokenType.TokenType_Back_Slash_R):
         parser.skipNextOne()
         parser.isEnd = true
+    ]#
 
 # 需要保证该函数结束后, index 指向的是 `)`
 proc operandRightParenthese(parser: var Parse) =
@@ -448,11 +462,15 @@ proc skipNextOne(self: var Parse) =
 proc printOpts*(self: var Parse) =
     echo(self.opts)
 
+proc setOperandEndCb*(self: var Parse, cb: proc(t: token.Token): bool) =
+    self.operandEndCb = cb
+
 proc new*(tokens: seq[token.Token]): Parse =
     # echo(tokens)
     result = Parse(
         tokens: tokens,
         index: 0,
         length: tokens.len(),
-        nupOperandCb: operandLinebreak
+        nupOperandCb: operandLinebreak,
+        operandEndCb: operandEndNormalCb
     )

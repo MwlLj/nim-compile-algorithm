@@ -21,7 +21,7 @@ proc handleID*(self: var parse.Parse, id: var string) =
         tokenType = token.TokenType.TokenType_KW_While
     of "for":
         tokenType = token.TokenType.TokenType_KW_For
-    of "fn":
+    of "fn", "func":
         tokenType = token.TokenType.TokenType_KW_Fn
     of "true":
         tokenType = token.TokenType.TokenType_KW_True
@@ -29,6 +29,8 @@ proc handleID*(self: var parse.Parse, id: var string) =
         tokenType = token.TokenType.TokenType_KW_False
     of "let":
         tokenType = token.TokenType.TokenType_KW_Let
+    of "var":
+        tokenType = token.TokenType.TokenType_KW_Var
     else:
         tokenType = token.TokenType.TokenType_ID
     self.tokens.add(token.Token(

@@ -20,6 +20,8 @@ type
         TokenType_KW_Fn,
         # let
         TokenType_KW_Let,
+        # var
+        TokenType_KW_Var,
         # true
         TokenType_KW_True,
         # false
