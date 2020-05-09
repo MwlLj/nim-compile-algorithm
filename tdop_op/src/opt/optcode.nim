@@ -1,5 +1,7 @@
 type
     Instruction* = enum
+        Instruction_If_Stmt,
+        Instruction_Express_Stmt,
         Instruction_Load_iConst,
         Instruction_Plus,
         Instruction_Multiplication,

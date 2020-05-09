@@ -24,9 +24,9 @@ type
         variable: Option[string]
 
 type
-    Opt = object
-        instruction: Instruction
-        values: seq[OptValue]
+    Opt* = object
+        instruction*: Instruction
+        values*: seq[OptValue]
 
 type
     Parse = ref object
@@ -51,7 +51,7 @@ proc skipNextOne(self: var Parse)
 proc express*(self: var Parse, rbp: int, isRight: bool = false, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue]
 
 proc operandEndNormalCb(t: token.Token): bool =
-    if (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R):
+    if (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
         return true
     return false
 
@@ -346,6 +346,17 @@ proc express*(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType)
     var left = t.get().nup(self, exprType=exprType)
     if left.isNone():
         return none(express.ExprValue)
+    ########################################
+    # 检测整个表达式是否只存在一个操作数 (如果只有一个操作数, 需生成一个指令, 因为 所有的指令都在 led 中追加的, 如果只有一个操作数, 无法进入到 led 方法)
+    if self.length == 1:
+        if left.get().value.get().i64.isSome():
+            self.opts.add(Opt(
+                instruction: Instruction_Load_iConst,
+                values: @[OptValue(
+                    integer: some(left.get().value.get().i64.get())
+                )]
+            ))
+    ########################################
     # 获取双目运算token
     #[
     var optToken = self.takeNextOne()
@@ -404,9 +415,11 @@ proc getCurrentToken(self: var Parse): Option[token.Token] =
             return none(token.Token)
         else:
             t = tok.get()
+    #[
     if self.tokenIsEnd(t):
         return none(token.Token)
         # return some(t)
+    ]#
     return some(t)
 
 proc takeNextOne(self: var Parse): Option[token.Token] =
@@ -427,8 +440,10 @@ proc takeNextOne(self: var Parse): Option[token.Token] =
             return none(token.Token)
         else:
             t = tok.get()
+    #[
     if self.tokenIsEnd(t):
         return none(token.Token)
+    ]#
     return some(t)
 
 proc lookupNextOne(self: var Parse): Option[token.Token] =
@@ -458,6 +473,9 @@ proc lookupNextOneExceptLinebreak(self: var Parse): Option[token.Token] =
 
 proc skipNextOne(self: var Parse) =
     self.index += 1
+
+proc getOpts*(self: Parse): seq[Opt] =
+    return self.opts
 
 proc printOpts*(self: var Parse) =
     echo(self.opts)

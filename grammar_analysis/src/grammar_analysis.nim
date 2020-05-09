@@ -3,14 +3,26 @@ from "../../lexical_analysis/src/token/handle" as token_handle import nil
 # from "parse/parse" as grammarparse import nil
 import "parse/parse" as grammarparse
 import "parse/handle" as grammarhandle
+import "parse/ihandle"
+import "parse/handle_parse" as grammarhandleparse
+
+proc printDividing(n: int) =
+    var s: string
+    for _ in 0..n:
+        s.add("-")
+    echo(s)
 
 proc main() =
     let stream  = readFile("./resource/test.lion")
     var tokenParser = token_parse.new(stream)
     let tokens = token_handle.parse(tokenParser)
     echo(tokens)
+    printDividing(100)
     var parser = grammarparse.newParser(tokens)
-    parser.parse()
+    let handle: ihandle.IHandle = new(grammarhandle.Handle)
+    handle.parse(parser)
+    let opts = parser.getOpts()
+    echo(opts)
 
 when isMainModule:
     main()
