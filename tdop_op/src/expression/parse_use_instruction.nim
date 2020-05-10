@@ -39,6 +39,8 @@ type
         nupOperandCb: proc(parser: var Parse)
         # 返回值: 是否遇到结束符
         operandEndCb: proc(t: token.Token): bool
+        nupEnterTimes: int
+        nupToken: token.Token
 
 type operandCallback = proc(parser: var Parse)
 
@@ -49,6 +51,8 @@ proc lookupNextOne(self: var Parse): Option[token.Token]
 proc lookupNextOneExceptLinebreak(self: var Parse): Option[token.Token]
 proc skipNextOne(self: var Parse)
 proc express*(self: var Parse, rbp: int, isRight: bool = false, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue]
+proc addTokenInstruction(self: var Parse, t: token.Token)
+proc addTokenValueInstruction(self: var Parse, value: Option[token.Value])
 
 proc operandEndNormalCb(t: token.Token): bool =
     if (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
@@ -92,22 +96,18 @@ proc operandRightParenthese(parser: var Parse) =
  ]#
 proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue] =
     var result: Option[express.ExprValue]
+    var isPrefixOpt: bool = false
     case self.tokenType
     of token.TokenType.TokenType_Number_Des:
         result = some(express.ExprValue(
             value: some(self.value)
         ))
     of token.TokenType.TokenType_Symbol_Minus:
+        isPrefixOpt = true
         # 负号
         parser.skipNextOne()
         let right = parser.express(100, exprType=exprType)
-        if right.get().value.isSome():
-            parser.opts.add(Opt(
-                instruction: Instruction_Load_iConst,
-                values: @[OptValue(
-                    integer: some(right.get().value.get().i64.get())
-                )]
-            ))
+        parser.addTokenValueInstruction(right.get().value)
         parser.opts.add(Opt(
             instruction: Instruction_Prefix_Minus
         ))
@@ -127,10 +127,10 @@ proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.Ex
         var pr = new(parser.tokens[parser.index..parser.length-1])
         # 跳过 pr 解析的长度
         pr.nupOperandCb = operandRightParenthese
-        echo(fmt"parser.index: {parser.index}")
         result = pr.express(0, exprType=expr.ExprType.ExprType_Normal)
+        if pr.nupEnterTimes == 1:
+            pr.addTokenInstruction(pr.nupToken)
         parser.index += pr.index
-        echo(fmt"pr.index: {pr.index}, parser.index: {parser.index}")
         parser.opts.add(pr.opts)
     # of token.TokenType.TokenType_Symbol_Parenthese_Right:
         # result = none(express.ExprValue)
@@ -148,30 +148,18 @@ proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.Ex
     ]#
     #if parser.nupOperandCb != nil:
         #parser.nupOperandCb(parser)
+    if not isPrefixOpt:
+        parser.nupEnterTimes += 1
+        parser.nupToken = self
     return result
 
 proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.Expr] =
     case self.tokenType
     of token.TokenType.TokenType_Symbol_Multiplication:
-        if left.value.isSome():
-            if left.value.get().i64.isSome():
-                parser.opts.add(Opt(
-                    instruction: Instruction_Load_iConst,
-                    values: @[OptValue(
-                        integer: some(left.value.get().i64.get())
-                    )]
-                ))
+        parser.addTokenValueInstruction(left.value)
         let right = parser.express(self.lbp, exprType=exprType)
         if right.isSome():
-            let r = right.get()
-            if r.value.isSome():
-                if r.value.get().i64.isSome():
-                    parser.opts.add(Opt(
-                        instruction: Instruction_Load_iConst,
-                        values: @[OptValue(
-                            integer: some(r.value.get().i64.get())
-                        )]
-                    ))
+            parser.addTokenValueInstruction(right.get().value)
         parser.opts.add(Opt(
             instruction: Instruction_Multiplication
         ))
@@ -181,25 +169,10 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Plus:
-        if left.value.isSome():
-            if left.value.get().i64.isSome():
-                parser.opts.add(Opt(
-                    instruction: Instruction_Load_iConst,
-                    values: @[OptValue(
-                        integer: some(left.value.get().i64.get())
-                    )]
-                ))
+        parser.addTokenValueInstruction(left.value)
         let right = parser.express(self.lbp, exprType=exprType)
         if right.isSome():
-            let r = right.get()
-            if r.value.isSome():
-                if r.value.get().i64.isSome():
-                    parser.opts.add(Opt(
-                        instruction: Instruction_Load_iConst,
-                        values: @[OptValue(
-                            integer: some(r.value.get().i64.get())
-                        )]
-                    ))
+            parser.addTokenValueInstruction(right.get().value)
         parser.opts.add(Opt(
             instruction: Instruction_Plus
         ))
@@ -221,29 +194,14 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_And:
-        if left.value.isSome():
-            if left.value.get().i64.isSome():
-                parser.opts.add(Opt(
-                    instruction: Instruction_Load_iConst,
-                    values: @[OptValue(
-                        integer: some(left.value.get().i64.get())
-                    )]
-                ))
+        parser.addTokenValueInstruction(left.value)
         let optIndex = parser.opts.len()
         parser.opts.add(Opt(
             instruction: Instruction_Opt_And
         ))
         let right = parser.express(self.lbp, exprType=exprType)
         if right.isSome():
-            let r = right.get()
-            if r.value.isSome():
-                if r.value.get().i64.isSome():
-                    parser.opts.add(Opt(
-                        instruction: Instruction_Load_iConst,
-                        values: @[OptValue(
-                            integer: some(r.value.get().i64.get())
-                        )]
-                    ))
+            parser.addTokenValueInstruction(right.get().value)
         parser.opts.add(Opt(
             instruction: Instruction_Opt_And_Calc
         ))
@@ -257,29 +215,14 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Or:
-        if left.value.isSome():
-            if left.value.get().i64.isSome():
-                parser.opts.add(Opt(
-                    instruction: Instruction_Load_iConst,
-                    values: @[OptValue(
-                        integer: some(left.value.get().i64.get())
-                    )]
-                ))
+        parser.addTokenValueInstruction(left.value)
         let optIndex = parser.opts.len()
         parser.opts.add(Opt(
             instruction: Instruction_Opt_Or
         ))
         let right = parser.express(self.lbp, exprType=exprType)
         if right.isSome():
-            let r = right.get()
-            if r.value.isSome():
-                if r.value.get().i64.isSome():
-                    parser.opts.add(Opt(
-                        instruction: Instruction_Load_iConst,
-                        values: @[OptValue(
-                            integer: some(r.value.get().i64.get())
-                        )]
-                    ))
+            parser.addTokenValueInstruction(right.get().value)
         parser.opts.add(Opt(
             instruction: Instruction_Opt_Or_Calc
         ))
@@ -298,15 +241,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
             raise newException(OSError, "left is not assign")
         let right = parser.express(self.lbp, true, exprType=exprType)
         if right.isSome():
-            let r = right.get()
-            if r.value.isSome():
-                if r.value.get().i64.isSome():
-                    parser.opts.add(Opt(
-                        instruction: Instruction_Load_iConst,
-                        values: @[OptValue(
-                            integer: some(r.value.get().i64.get())
-                        )]
-                    ))
+            parser.addTokenValueInstruction(right.get().value)
         var instruction: Instruction
         case exprType
         of expr.ExprType.ExprType_Normal:
@@ -346,17 +281,6 @@ proc express*(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType)
     var left = t.get().nup(self, exprType=exprType)
     if left.isNone():
         return none(express.ExprValue)
-    ########################################
-    # 检测整个表达式是否只存在一个操作数 (如果只有一个操作数, 需生成一个指令, 因为 所有的指令都在 led 中追加的, 如果只有一个操作数, 无法进入到 led 方法)
-    if self.length == 1:
-        if left.get().value.get().i64.isSome():
-            self.opts.add(Opt(
-                instruction: Instruction_Load_iConst,
-                values: @[OptValue(
-                    integer: some(left.get().value.get().i64.get())
-                )]
-            ))
-    ########################################
     # 获取双目运算token
     #[
     var optToken = self.takeNextOne()
@@ -388,6 +312,24 @@ proc express*(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType)
         if optToken.isNone():
             break
     return left
+
+proc addTokenValueInstruction(self: var Parse, value: Option[token.Value]) =
+    if value.isSome():
+        if value.get().i64.isSome():
+            self.opts.add(Opt(
+                instruction: Instruction_Load_iConst,
+                values: @[OptValue(
+                    integer: some(value.get().i64.get())
+                )]
+            ))
+
+proc addTokenInstruction(self: var Parse, t: token.Token) =
+    self.addTokenValueInstruction(some(t.value))
+
+proc parse*(self: var Parse) =
+    discard self.express(0)
+    if self.nupEnterTimes == 1:
+        self.addTokenInstruction(self.nupToken)
 
 proc getUsedTokenTotal*(self: Parse): int =
     return self.index + 1

@@ -16,6 +16,8 @@ proc skipNextOne*(self: var Parser) =
     self.skipNextN(1)
 
 proc currentToken*(self: var Parser): Option[token.Token] =
+    if self.index == 0 and self.length > 0:
+        return some(self.tokens[0])
     let index = self.index
     if index >= self.length - 1:
         return none(token.Token)

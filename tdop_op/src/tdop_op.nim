@@ -117,7 +117,7 @@ proc parseUseInstructionTest() =
     var index = 0
     while index < tokenLength:
         var parser = parserUI.new(tokens[index..tokenLength-1])
-        let r = parser.express(0)
+        parser.parse()
         # echo(r)
         index += parser.getUsedTokenTotal()
         parser.printOpts()
