@@ -5,6 +5,7 @@ import "parse/parse" as grammarparse
 import "parse/handle" as grammarhandle
 import "parse/ihandle"
 import "parse/handle_parse" as grammarhandleparse
+import "structs/scope"
 
 proc printDividing(n: int) =
     var s: string
@@ -20,7 +21,8 @@ proc main() =
     printDividing(100)
     var parser = grammarparse.newParser(tokens)
     let handle: ihandle.IHandle = new(grammarhandle.Handle)
-    handle.parse(parser)
+    var sc = scope.newScope("main")
+    handle.parse(parser, sc)
     let opts = parser.getOpts()
     echo(opts)
 

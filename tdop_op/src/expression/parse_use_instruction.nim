@@ -50,7 +50,7 @@ proc takeNextOne(self: var Parse): Option[token.Token]
 proc lookupNextOne(self: var Parse): Option[token.Token]
 proc lookupNextOneExceptLinebreak(self: var Parse): Option[token.Token]
 proc skipNextOne(self: var Parse)
-proc express*(self: var Parse, rbp: int, isRight: bool = false, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue]
+proc express(self: var Parse, rbp: int, isRight: bool = false, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue]
 proc addTokenInstruction(self: var Parse, t: token.Token)
 proc addTokenValueInstruction(self: var Parse, value: Option[token.Value])
 
@@ -272,7 +272,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
         return none(express.Expr)
 
 # 目的: 计算右操作数
-proc express*(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType): Option[express.ExprValue] =
+proc express(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType): Option[express.ExprValue] =
     # 获取当前token (单目运算 / 数字)
     let t = self.getCurrentToken()
     if t.isNone():

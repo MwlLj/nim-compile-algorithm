@@ -1,12 +1,13 @@
 import "parse"
 import "ihandle"
+import "../structs/scope"
 import "../../../tdop_op/src/expression/parse_use_instruction" as opparse
 import "../../../tdop_op/src/opt/optcode"
 import "../../../lexical_analysis/src/token/token"
 import strformat
 import "options"
 
-proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser) =
+proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scope.Scope) =
     #[
     # 1. 跳过if
     # 2. 处理 if 和 { 之间的表达式
@@ -30,5 +31,5 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser) =
     # 将表达式使用完毕的token跳过
     parser.skipNextN(expressParser.getUsedTokenTotal())
     # 处理 { } 之间的 语句
-    self.parse(parser, some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right))
+    self.parse(parser, sc, some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right))
 

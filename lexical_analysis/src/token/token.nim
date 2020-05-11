@@ -26,6 +26,22 @@ type
         TokenType_KW_True,
         # false
         TokenType_KW_False,
+        # string
+        TokenType_KW_String,
+        # int
+        TokenType_KW_Int,
+        # i32, int32
+        TokenType_KW_Int32,
+        # i64, int64
+        TokenType_KW_Int64,
+        # u32, uint32
+        TokenType_KW_UInt32,
+        # u64, uint64
+        TokenType_KW_UInt64,
+        # f32, float32
+        TokenType_KW_Float32,
+        # f64, float64
+        TokenType_KW_Float64,
         # 小括号 (左) (
         TokenType_Symbol_Parenthese_Left,
         # 小括号 (右) )

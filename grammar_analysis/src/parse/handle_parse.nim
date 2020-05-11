@@ -1,6 +1,7 @@
 import "ihandle"
 import "handle"
 import "parse"
+import "../structs/scope"
 import "if_stmt"
 import "expression"
 import "var_define"
@@ -9,10 +10,9 @@ from "../../../lexical_analysis/src/token/token" as token import nil
 import options
 import strformat
 
-method parse*(self: handle.Handle, parser: var parse.Parser, terminationTokenType: Option[token.TokenType]) =
+method parse*(self: handle.Handle, parser: var parse.Parser, sc: var scope.Scope, terminationTokenType: Option[token.TokenType]) =
     while true:
         let cur = parser.currentToken()
-        echo(cur)
         if cur.isNone():
             return
         let curToken = cur.get()
@@ -21,10 +21,10 @@ method parse*(self: handle.Handle, parser: var parse.Parser, terminationTokenTyp
             break
         case curToken.tokenType:
         of token.TokenType.TokenType_KW_If:
-            self.handleIfStmt(parser)
+            self.handleIfStmt(parser, sc)
         of token.TokenType.TokenType_KW_Var:
-            self.handleVarDefine(parser)
+            self.handleVarDefine(parser, sc)
         else:
             # 表达式
-            self.handleExpression(parser)
+            self.handleExpression(parser, sc)
 

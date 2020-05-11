@@ -31,6 +31,16 @@ proc handleID*(self: var parse.Parse, id: var string) =
         tokenType = token.TokenType.TokenType_KW_Let
     of "var":
         tokenType = token.TokenType.TokenType_KW_Var
+    of "string":
+        tokenType = token.TokenType.TokenType_KW_String
+    of "i32", "int32":
+        tokenType = token.TokenType.TokenType_KW_Int32
+    of "u32", "uint32":
+        tokenType = token.TokenType.TokenType_KW_UInt32
+    of "f32", "float32":
+        tokenType = token.TokenType.TokenType_KW_Float32
+    of "f64", "float64":
+        tokenType = token.TokenType.TokenType_KW_Float64
     else:
         tokenType = token.TokenType.TokenType_ID
     self.tokens.add(token.Token(
