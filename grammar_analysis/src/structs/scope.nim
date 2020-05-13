@@ -1,5 +1,4 @@
 import "struct"
-import tables
 import options
 
 type
@@ -15,7 +14,7 @@ type
   Package* = object
     # 包名称
     name*: string
-    structs*: Table[string, struct.Struct]
+    structs*: seq[struct.Struct]
     # 存储 包级别的变量
     vars*: seq[Var]
 
@@ -72,7 +71,7 @@ proc addVar*(self: var Package, v: Var): int =
 proc newPackage*(name: string): Package =
     result = Package(
         name: name,
-        structs: initTable[string, Struct]()
+        structs: newSeq[Struct]()
     )
 
 proc newScope*(curPackageName: string, isPackageScope: bool): Scope =

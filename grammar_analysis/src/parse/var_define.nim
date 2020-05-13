@@ -141,6 +141,8 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
                 ))
             else:
                 # 非系统类型
+                # 这里暂时不考虑多值(包名.结构名)的情况, 认为只有一个文件
+                # 所以这里在本包中查找
                 discard
         else:
             quit(fmt"expect a type, but found {typToken.tokenType}")
