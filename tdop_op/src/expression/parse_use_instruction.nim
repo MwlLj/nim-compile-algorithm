@@ -19,9 +19,9 @@ import strformat
 ]#
 
 type
-    OptValue = object
-        integer: Option[int64]
-        variable: Option[string]
+    OptValue* = object
+        integer*: Option[int64]
+        variable*: Option[string]
 
 type
     Opt* = object

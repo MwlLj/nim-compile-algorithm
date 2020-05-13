@@ -25,7 +25,7 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
             # 遇到 { 结束
             return true
         return false)
-    discard expressParser.express(0)
+    expressParser.parse()
     let opts = expressParser.getOpts()
     parser.opts.add(opts)
     # 将表达式使用完毕的token跳过

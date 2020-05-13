@@ -1,17 +1,12 @@
+import "struct"
 import tables
 import options
-
-# 作用域结构体
-type
-    Struct* = object
-        # 结构体名称
-        name*: string
 
 type
     Package* = object
         # 包名称
         name*: string
-        structs*: Table[string, Struct]
+        structs*: Table[string, struct.Struct]
 
 type
     VarValue = object
