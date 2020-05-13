@@ -21,7 +21,7 @@ proc main() =
     printDividing(100)
     var parser = grammarparse.newParser(tokens)
     let handle: ihandle.IHandle = new(grammarhandle.Handle)
-    var sc = scope.newScope("main")
+    var sc = scope.newScope("main", true)
     handle.parse(parser, sc)
     let opts = parser.getOpts()
     echo(opts)

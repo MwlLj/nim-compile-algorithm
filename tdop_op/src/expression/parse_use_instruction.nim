@@ -22,6 +22,7 @@ type
     OptValue* = object
         integer*: Option[int64]
         variable*: Option[string]
+        index*: Option[int]
 
 type
     Opt* = object
@@ -242,14 +243,8 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
         let right = parser.express(self.lbp, true, exprType=exprType)
         if right.isSome():
             parser.addTokenValueInstruction(right.get().value)
-        var instruction: Instruction
-        case exprType
-        of expr.ExprType.ExprType_Normal:
-            instruction = Instruction_Assignment
-        of expr.ExprType.ExprType_Var_Define:
-            instruction = Instruction_Var_Define
         parser.opts.add(Opt(
-            instruction: instruction,
+            instruction: Instruction_Assignment,
             values: @[OptValue(
                 variable: some(left.value.get().str.get())
             )]

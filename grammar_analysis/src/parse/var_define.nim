@@ -19,10 +19,10 @@
     }
 
 存储结构:
-    1. 每一个 package 都有一个 大的数组, 用于存储包中所有变量的地址
-    2. 虚拟机启动时, 加载 用到的 所有 package, 并分配数组空间
+    1. 每一个 block作用域(不包括package级别的作用域) 都有一个数组, 用于存储包中所有全局变量
+    2. 虚拟机读取到加载 block 指令后, 将创建一个指定大小的数组
     3. 对变量进行的操作, 在编译期间都会被翻译为 该数组的 index
-        目的: 如果不抽象为一个大的数组, 虚拟机必须要知道每一个变量的作用域, 会降低虚拟机的性能 (虚拟机就应该傻傻的叫它干什么就干什么, 它不应该有想法)
+        目的: 如果不抽象为一个数组, 虚拟机必须要知道每一个变量的作用域, 会降低虚拟机的性能 (虚拟机就应该傻傻的叫它干什么就干什么, 它不应该有自己的想法)
 
 类型推断:
     关键字类型(int, uint32, int32, string ...):
@@ -45,6 +45,7 @@
 import "parse"
 import "ihandle"
 import "../structs/scope"
+import "../structs/struct"
 import "../statics/syspackage"
 import "../global/structs"
 import "../../../tdop_op/src/expression/parse_use_instruction" as opparse
@@ -68,7 +69,7 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
         quit("identify is invalid")
     let varName = nextToken.value.str.get()
     # 判断变量名在当前的block中是否存在
-    if sc.curBlock.vars.hasKey(varName):
+    if sc.curBlock.exists(varName):
         # 变量在当前的block中存在 => 报错
         quit("var already define")
     # 跳过 变量名
@@ -118,7 +119,26 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
                     # 没有加载 => 编译 / 加载 (如果存在编译后文件就直接加载, 否则需要编译, 然后写入内存)
                     discard
                 ]#
-                discard structs.loadSyspackageStruct(id)
+                #[
+                # loadSyspackageStruct: 如果存在就返回索引; 如果不存在就添加到内存中, 然后返回索引
+                ]#
+                let v = structs.loadSyspackageStruct(id)
+                let index = v.index
+                let structObj = v.value
+                # 生成指令:
+                # 调用index 处类型的结构体的构造方法 (虚拟机调用后创建一个实例对象, push到计算栈中)
+                let constructionMethodIndex = structObj.findNoparamConstruction()
+                if constructionMethodIndex.isNone():
+                  quit(fmt"{id}() not exists in struct {id}")
+                parser.opts.add(opparse.Opt(
+                  instruction: optcode.Instruction.Instruction_Call_Struct_Method,
+                  values: @[opparse.OptValue(
+                    index: some(index)
+                  ),
+                  opparse.OptValue(
+                    index: some(constructionMethodIndex.get())
+                  )]
+                ))
             else:
                 # 非系统类型
                 discard
@@ -126,6 +146,29 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
             quit(fmt"expect a type, but found {typToken.tokenType}")
     of token.TokenType.TokenType_Symbol_Assignment:
         # var xxx string =
+        # 先计算类型 (不用生成指令)
+        # 两个目的:
+        # 1. 判断右边的表达式的计算结果和左边的是否相同
+        # 2. 如果是非内置类型, 并且没有加载到内存, 可以顺便加载到内存中
+        case typToken.tokenType
+        of token.TokenType.TokenType_KW_String:
+          discard
+        of token.TokenType.TokenType_KW_Int32:
+          discard
+        of token.TokenType.TokenType_Id:
+            if typToken.value.str.get().len() == 0:
+                quit("type is invalid")
+            # 判断在不在 sys package 中
+            let id = typToken.value.str.get()
+            if syspackage.sysPackageStructs.hasKey(id):
+                let v = structs.loadSyspackageStruct(id)
+                let index = v.index
+                let structObj = v.value
+            else:
+                # 非系统类型
+                discard
+        else:
+            quit(fmt"expect a type, but found {typToken.tokenType}")
         # 跳过 = 号
         parser.skipNextOne()
         # 查找 = 号后面的 表达式
@@ -136,11 +179,28 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
         parser.skipNextN(expressParser.getUsedTokenTotal())
     else:
         quit(fmt"expect linebreak or ; or =, but found {afterTypeToken.tokenType}")
-    # 生成变量定义指令
-    parser.opts.add(opparse.Opt(
-        instruction: optcode.Instruction.Instruction_Var_Define,
+    if sc.curBlock.isPackage:
+      # 将变量写入package域中的vars中
+      let index = sc.curPackage.addVar(scope.Var(
+        name: varName
+      ))
+      # 生成变量定义指令
+      parser.opts.add(opparse.Opt(
+        instruction: optcode.Instruction.Instruction_Package_Scope_Var_Define,
         values: @[opparse.OptValue(
-            variable: some(varName)
+          index: some(index)
         )]
-    ))
+      ))
+    else:
+      # 将变量写入block域中的vars中
+      let index = sc.curBlock.addVar(scope.Var(
+        name: varName
+      ))
+      # 生成变量定义指令
+      parser.opts.add(opparse.Opt(
+        instruction: optcode.Instruction.Instruction_Normal_Scope_Var_Define,
+        values: @[opparse.OptValue(
+          index: some(index)
+        )]
+      ))
 
