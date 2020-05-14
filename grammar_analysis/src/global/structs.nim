@@ -19,6 +19,17 @@ proc toString(self: StructKey): string =
   result.add(".")
   result.add(self.name)
 
+#[
+# to do
+# 应该使用以下结构定义
+# seq[T(
+#   # 包的路径
+#   packagePath: string
+#   packageName: string
+#   structs: seq[]
+# )]
+# 编译后, 字节码中, packagePath和packageName将会编译为 index, 提供给虚拟机使用
+]#
 # 需要加载的结构 (整个程序需要加载的结构)
 var needToUseStructs*: seq[Value] = newSeq[Value]()
 

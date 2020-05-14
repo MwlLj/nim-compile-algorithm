@@ -12,6 +12,10 @@ type
         TokenType_Id,
         # if
         TokenType_KW_If,
+        # else if
+        TokenType_KW_ELSE_IF,
+        # else
+        TokenType_KW_ELSE,
         # while
         TokenType_KW_While,
         # for

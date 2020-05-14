@@ -22,7 +22,6 @@ type
     OptValue* = object
         integer*: Option[int64]
         variable*: Option[string]
-        index*: Option[int]
 
 type
     Opt* = object
@@ -43,7 +42,7 @@ type
         nupEnterTimes: int
         nupToken: token.Token
 
-type operandCallback = proc(parser: var Parse)
+type operandEndCbFunc* = proc(t: token.Token): bool
 
 proc new*(tokens: seq[token.Token]): Parse
 proc getCurrentToken(self: var Parse): Option[token.Token]
@@ -417,7 +416,7 @@ proc getOpts*(self: Parse): seq[Opt] =
 proc printOpts*(self: var Parse) =
     echo(self.opts)
 
-proc setOperandEndCb*(self: var Parse, cb: proc(t: token.Token): bool) =
+proc setOperandEndCb*(self: var Parse, cb: operandEndCbFunc) =
     self.operandEndCb = cb
 
 proc new*(tokens: seq[token.Token]): Parse =

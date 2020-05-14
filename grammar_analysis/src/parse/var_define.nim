@@ -133,17 +133,26 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
                 parser.opts.add(opparse.Opt(
                   instruction: optcode.Instruction.Instruction_Call_Struct_Method,
                   values: @[opparse.OptValue(
-                    index: some(index)
+                    integer: some(int64(index))
                   ),
                   opparse.OptValue(
-                    index: some(constructionMethodIndex.get())
+                    integer: some(int64(constructionMethodIndex.get()))
                   )]
                 ))
             else:
                 # 非系统类型
                 # 这里暂时不考虑多值(包名.结构名)的情况, 认为只有一个文件
                 # 所以这里在本包中查找
-                discard
+                # 1. 如果从 curPackage 中找到 对应的结构体(在使用前就定义了), 则返回索引值
+                # 2. 如果不存在于 curPackage, 添加占位符, 并记录到未定义队列中, 待当前包解析完成之后, 再填充 (解析完成之后, 如果还是没有找到, 就报错)
+                let r = sc.curPackage.findStruct(id)
+                if r.isSome():
+                  # 在curPackage中找到了结构体 => 写入
+                  let structIndex = r.get()
+                  # to do ... (在解析package后需要改动)
+                else:
+                  # 没有在curPackage中找到结构体
+                  discard
         else:
             quit(fmt"expect a type, but found {typToken.tokenType}")
     of token.TokenType.TokenType_Symbol_Assignment:
@@ -190,7 +199,7 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
       parser.opts.add(opparse.Opt(
         instruction: optcode.Instruction.Instruction_Package_Scope_Var_Define,
         values: @[opparse.OptValue(
-          index: some(index)
+          integer: some(int64(index))
         )]
       ))
     else:
@@ -202,7 +211,7 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
       parser.opts.add(opparse.Opt(
         instruction: optcode.Instruction.Instruction_Normal_Scope_Var_Define,
         values: @[opparse.OptValue(
-          index: some(index)
+          integer: some(int64(index))
         )]
       ))
 

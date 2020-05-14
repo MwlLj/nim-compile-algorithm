@@ -41,6 +41,8 @@ proc currentToken*(self: var Parser): Option[token.Token] =
           token.TokenType.TokenType_Back_Slash_T,
           token.TokenType.TokenType_Line_Break:
             self.skipNextOne()
+            if self.index > self.length - 1:
+              return none(token.Token)
             t = self.tokens[self.index]
         else:
             break

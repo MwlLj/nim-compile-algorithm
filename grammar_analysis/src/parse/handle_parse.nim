@@ -10,7 +10,7 @@ from "../../../lexical_analysis/src/token/token" as token import nil
 import options
 import strformat
 
-method parse*(self: handle.Handle, parser: var parse.Parser, sc: var scope.Scope, terminationTokenType: Option[token.TokenType]) =
+method parse*(self: handle.Handle, parser: var parse.Parser, sc: var scope.Scope, terminationTokenType: Option[token.TokenType], expressOperandEndCb: Option[opparse.operandEndCbFunc]) =
     while true:
         let cur = parser.currentToken()
         if cur.isNone():
@@ -21,10 +21,12 @@ method parse*(self: handle.Handle, parser: var parse.Parser, sc: var scope.Scope
             break
         case curToken.tokenType:
         of token.TokenType.TokenType_KW_If:
-            self.handleIfStmt(parser, sc)
+          # if 语句
+          self.handleIfStmt(parser, sc)
         of token.TokenType.TokenType_KW_Var:
-            self.handleVarDefine(parser, sc)
+          # 变量定义语句
+          self.handleVarDefine(parser, sc)
         else:
             # 表达式
-            self.handleExpression(parser, sc)
+            self.handleExpression(parser, sc, expressOperandEndCb)
 

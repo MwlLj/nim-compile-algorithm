@@ -68,10 +68,18 @@ proc addVar*(self: var Package, v: Var): int =
   self.vars.add(v)
   result = self.vars.len()
 
+# 查找包中的结构体
+proc findStruct*(self: Package, name: string): Option[int] =
+  result = none(int)
+  for index, item in self.structs.pairs:
+    if item.name == name:
+      return some(index)
+
 proc newPackage*(name: string): Package =
     result = Package(
         name: name,
-        structs: newSeq[Struct]()
+        structs: newSeq[Struct](),
+        vars: newSeq[Var]()
     )
 
 proc newScope*(curPackageName: string, isPackageScope: bool): Scope =
