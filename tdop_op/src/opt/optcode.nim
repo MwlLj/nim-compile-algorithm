@@ -1,6 +1,7 @@
 type
     Instruction* = enum
         Instruction_If_Stmt,
+        Instruction_If_Else_Stmt,
         Instruction_Express_Stmt,
         Instruction_Load_iConst,
         Instruction_Plus,
@@ -31,4 +32,7 @@ type
         # 第一个参数: 条件成立后的跳转位置
         # 第二个参数: 条件不成立后的跳转位置
         Instruction_Condition_Expr_End
+        # 条件语句块结束后的跳转
+        # 参数: 位置
+        Instruction_Condition_Block_End
 

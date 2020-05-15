@@ -13,9 +13,9 @@ type
         # if
         TokenType_KW_If,
         # else if
-        TokenType_KW_ELSE_IF,
+        TokenType_KW_Else_If,
         # else
-        TokenType_KW_ELSE,
+        TokenType_KW_Else,
         # while
         TokenType_KW_While,
         # for
