@@ -30,12 +30,26 @@ proc handleElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var sc
     quit("expect a {, but got EOF")
   else:
     parser.skipNextOne()
+  # 解析 {} 之间的数据, 需要更新curBlock和parentBlock
+  # 让当前作用域作为 {} 块中的 父作用域
+  #[
+  let parentBlock = sc.parentBlock
+  sc.parentBlock = some(sc.curBlock)
+  sc.curBlock = scope.newLocalBlock()
+  ]#
+  sc.blockSwitch()
   self.parse(parser, sc,
     some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
     expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
       result = false
       if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
         return true))
+  # {} 解析完毕 => 将作用域还原
+  #[
+  sc.curBlock = sc.parentBlock.get()
+  sc.parentBlock = parentBlock
+  ]#
+  sc.blockReduction()
   let blockEndOptIndex = parser.opts.len()
   parser.opts.add(opparse.Opt(
     instruction: optcode.Instruction.Instruction_Condition_Block_End,
@@ -60,7 +74,7 @@ proc handleIfElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var 
       instruction: optcode.Instruction.Instruction_Condition_Expr_Start
     ))
     # 处理 if { 之间的条件表达式
-    var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1])
+    var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1], sc)
     expressParser.setOperandEndCb(proc(t: token.Token): bool =
         if t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Left:
             # 遇到 { 结束
@@ -85,12 +99,15 @@ proc handleIfElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var 
     # 将表达式使用完毕的token跳过
     parser.skipNextN(expressParser.getUsedTokenTotal())
     # 处理 { } 之间的 语句
+    # 让当前作用域作为 {} 块中的 父作用域
+    sc.blockSwitch()
     self.parse(parser, sc,
       some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
       expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
         result = false
         if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
           return true))
+    sc.blockReduction()
     let blockEndOptIndex = parser.opts.len()
     parser.opts.add(opparse.Opt(
       instruction: optcode.Instruction.Instruction_Condition_Block_End,
@@ -114,7 +131,7 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
       instruction: optcode.Instruction.Instruction_Condition_Expr_Start
     ))
     # 处理 if { 之间的条件表达式
-    var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1])
+    var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1], sc)
     expressParser.setOperandEndCb(proc(t: token.Token): bool =
         if t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Left:
             # 遇到 { 结束
@@ -139,12 +156,15 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
     # 将表达式使用完毕的token跳过
     parser.skipNextN(expressParser.getUsedTokenTotal())
     # 处理 { } 之间的 语句
+    # 让当前作用域作为 {} 块中的 父作用域
+    sc.blockSwitch()
     self.parse(parser, sc,
       some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
       expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
         result = false
         if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
           return true))
+    sc.blockReduction()
     # 语句块处理完毕应该跳转到 整个if语句的最后
     var blockEndOptIndexs = newSeq[int]()
     var blockEndOptIndex = parser.opts.len()

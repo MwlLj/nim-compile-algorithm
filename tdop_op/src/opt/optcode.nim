@@ -12,10 +12,14 @@ type
         Instruction_Opt_And,
         Instruction_Opt_And_Calc,
         Instruction_Assignment,
-        # 普通作用域的变量定义
-        Instruction_Normal_Scope_Var_Define,
-        # 包作用域的变量定义
-        Instruction_Package_Scope_Var_Define,
+        Instruction_Enter_Package_Scope,
+        Instruction_Enter_Function_Scope,
+        Instruction_Leave_Package_Scope,
+        Instruction_Leave_Function_Scope,
+        # 当前作用域变量定义
+        # 虚拟机在读取到 Instruction_Enter_Package_Scope / Instruction_Enter_Function_Scope 时, 需要将 curScope 更新, Leave 时, 需要将上一次的作用域赋值给 curScope
+        # 或者每一个 scope 都记录自己的 parent
+        Instruction_Current_Scope_Var_Define,
         # 调用 string 的 new 方法
         Instruction_Call_String_New_Method,
         # 调用 int32 的 new 方法

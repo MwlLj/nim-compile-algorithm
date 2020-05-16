@@ -1,7 +1,8 @@
+import "express"
 import "../opt/optcode"
 import "../enums/expr"
+from "../../../grammar_analysis/src/structs/scope" import Scope
 import "../../../lexical_analysis/src/token/token" as token
-import "express"
 import options
 import strformat
 
@@ -31,6 +32,7 @@ type
 type
     Parse = ref object
         tokens: seq[token.Token]
+        sc: scope.Scope
         index: int
         length: int
         isEnd: bool
@@ -44,7 +46,7 @@ type
 
 type operandEndCbFunc* = proc(t: token.Token): bool
 
-proc new*(tokens: seq[token.Token]): Parse
+proc new*(tokens: seq[token.Token], sc: scope.Scope): Parse
 proc getCurrentToken(self: var Parse): Option[token.Token]
 proc takeNextOne(self: var Parse): Option[token.Token]
 proc lookupNextOne(self: var Parse): Option[token.Token]
@@ -94,12 +96,12 @@ proc operandRightParenthese(parser: var Parse) =
 1. 终结符(操作数 / 右括号) + 换行 是一条完整的语句
 2. 非终结符(左括号 / 操作符) + 换行 是非法的语句
  ]#
-proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.ExprValue] =
-    var result: Option[express.ExprValue]
+proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[ExprValue] =
+    var result: Option[ExprValue]
     var isPrefixOpt: bool = false
     case self.tokenType
     of token.TokenType.TokenType_Number_Des:
-        result = some(express.ExprValue(
+        result = some(ExprValue(
             value: some(self.value)
         ))
     of token.TokenType.TokenType_Symbol_Minus:
@@ -111,20 +113,20 @@ proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.Ex
         parser.opts.add(Opt(
             instruction: Instruction_Prefix_Minus
         ))
-        result = some(express.ExprValue(
-            exp: some(express.Expr(
+        result = some(ExprValue(
+            exp: some(Expr(
                 right: right,
                 op: self.value
             ))
         ))
     of token.TokenType.TokenType_Id:
-        result = some(express.ExprValue(
+        result = some(ExprValue(
             value: some(self.value)
         ))
     of token.TokenType.TokenType_Symbol_Parenthese_Left:
         parser.skipNextOne()
         # 创建新的 parser => 直到遇到 ) 为止
-        var pr = new(parser.tokens[parser.index..parser.length-1])
+        var pr = new(parser.tokens[parser.index..parser.length-1], parser.sc)
         # 跳过 pr 解析的长度
         pr.nupOperandCb = operandRightParenthese
         result = pr.express(0, exprType=expr.ExprType.ExprType_Normal)
@@ -135,7 +137,7 @@ proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.Ex
     # of token.TokenType.TokenType_Symbol_Parenthese_Right:
         # result = none(express.ExprValue)
     else:
-        return none(express.ExprValue)
+        return none(ExprValue)
     #[
     # 可以到达这里的是 操作数 / 右小括号 => 判断下一个是否是换行
     let nextToken = parser.lookupNextOne()
@@ -153,7 +155,7 @@ proc nup(self: token.Token, parser: var Parse, exprType: expr.ExprType = expr.Ex
         parser.nupToken = self
     return result
 
-proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[express.Expr] =
+proc led(self: token.Token, parser: var Parse, left: ExprValue, exprType: expr.ExprType = expr.ExprType.ExprType_Normal): Option[Expr] =
     case self.tokenType
     of token.TokenType.TokenType_Symbol_Multiplication:
         parser.addTokenValueInstruction(left.value)
@@ -163,7 +165,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
         parser.opts.add(Opt(
             instruction: Instruction_Multiplication
         ))
-        return some(express.Expr(
+        return some(Expr(
             left: some(left),
             right: right,
             op: self.value
@@ -176,19 +178,19 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
         parser.opts.add(Opt(
             instruction: Instruction_Plus
         ))
-        return some(express.Expr(
+        return some(Expr(
             left: some(left),
             right: right,
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Minus:
-        return some(express.Expr(
+        return some(Expr(
             left: some(left),
             right: parser.express(self.lbp, exprType=exprType),
             op: self.value
         ))
     of token.TokenType.TokenType_Symbol_Division:
-        return some(express.Expr(
+        return some(Expr(
             left: some(left),
             right: parser.express(self.lbp, exprType=exprType),
             op: self.value
@@ -209,7 +211,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
         parser.opts[optIndex].values = @[OptValue(
             integer: some((int64)parser.opts.len())
             )]
-        return some(express.Expr(
+        return some(Expr(
             left: some(left),
             right: right,
             op: self.value
@@ -230,7 +232,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
         parser.opts[optIndex].values = @[OptValue(
             integer: some((int64)parser.opts.len())
             )]
-        return some(express.Expr(
+        return some(Expr(
             left: some(left),
             right: right,
             op: self.value
@@ -254,7 +256,7 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
             2. 将栈顶元素 新增/更新 到左值中
             3. 将赋值的计算结果入栈
          ]#
-        return some(express.Expr(
+        return some(Expr(
             left: some(left),
             #[ 
             右结合, 可能是 a = b = 1
@@ -263,18 +265,18 @@ proc led(self: token.Token, parser: var Parse, left: express.ExprValue, exprType
             op: self.value
         ))
     else:
-        return none(express.Expr)
+        return none(Expr)
 
 # 目的: 计算右操作数
-proc express(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType): Option[express.ExprValue] =
+proc express(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType): Option[ExprValue] =
     # 获取当前token (单目运算 / 数字)
     let t = self.getCurrentToken()
     if t.isNone():
-        return none(express.ExprValue)
+        return none(ExprValue)
     # 获取左操作数
     var left = t.get().nup(self, exprType=exprType)
     if left.isNone():
-        return none(express.ExprValue)
+        return none(ExprValue)
     # 获取双目运算token
     #[
     var optToken = self.takeNextOne()
@@ -297,7 +299,7 @@ proc express(self: var Parse, rbp: int, isRight: bool, exprType: expr.ExprType):
         let l = optToken.get().led(self, left.get(), exprType=exprType)
         if l.isNone():
             break
-        left = some(express.ExprValue(
+        left = some(ExprValue(
             exp: some(l.get())
         ))
         if self.isEnd:
@@ -419,10 +421,11 @@ proc printOpts*(self: var Parse) =
 proc setOperandEndCb*(self: var Parse, cb: operandEndCbFunc) =
     self.operandEndCb = cb
 
-proc new*(tokens: seq[token.Token]): Parse =
+proc new*(tokens: seq[token.Token], sc: scope.Scope): Parse =
     # echo(tokens)
     result = Parse(
         tokens: tokens,
+        sc: sc,
         index: 0,
         length: tokens.len(),
         nupOperandCb: operandLinebreak,

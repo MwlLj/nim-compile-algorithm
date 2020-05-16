@@ -183,35 +183,20 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
         # 跳过 = 号
         parser.skipNextOne()
         # 查找 = 号后面的 表达式
-        var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1])
+        var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1], sc)
         expressParser.parse()
         let opts = expressParser.getOpts()
         parser.opts.add(opts)
         parser.skipNextN(expressParser.getUsedTokenTotal())
     else:
         quit(fmt"expect linebreak or ; or =, but found {afterTypeToken.tokenType}")
-    if sc.curBlock.isPackage:
-      # 将变量写入package域中的vars中
-      let index = sc.curPackage.addVar(scope.Var(
-        name: varName
-      ))
-      # 生成变量定义指令
-      parser.opts.add(opparse.Opt(
-        instruction: optcode.Instruction.Instruction_Package_Scope_Var_Define,
-        values: @[opparse.OptValue(
-          integer: some(int64(index))
-        )]
-      ))
-    else:
-      # 将变量写入block域中的vars中
-      let index = sc.curBlock.addVar(scope.Var(
-        name: varName
-      ))
-      # 生成变量定义指令
-      parser.opts.add(opparse.Opt(
-        instruction: optcode.Instruction.Instruction_Normal_Scope_Var_Define,
-        values: @[opparse.OptValue(
-          integer: some(int64(index))
-        )]
-      ))
+    # 将变量写入package域中的vars中
+    let index = sc.rootBlock.pushVar()
+    # 生成变量定义指令
+    parser.opts.add(opparse.Opt(
+      instruction: optcode.Instruction.Instruction_Current_Scope_Var_Define,
+      values: @[opparse.OptValue(
+        integer: some(int64(index))
+      )]
+    ))
 

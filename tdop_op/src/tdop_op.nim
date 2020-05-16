@@ -5,6 +5,7 @@ from "../../lexical_analysis/src/token/token" as token import nil
 # import "../../lexical_analysis/src/token/token" as token
 from "../../lexical_analysis/src/token/parse" as token_parse import nil
 from "../../lexical_analysis/src/token/handle" as token_handle import nil
+import "../../grammar_analysis/src/structs/scope"
 import strformat
 import options
 
@@ -116,11 +117,12 @@ proc parseUseInstructionTest() =
     let tokenLength = tokens.len()
     var index = 0
     while index < tokenLength:
-        var parser = parserUI.new(tokens[index..tokenLength-1])
-        parser.parse()
-        # echo(r)
-        index += parser.getUsedTokenTotal()
-        parser.printOpts()
+      let sc = scope.Scope()
+      var parser = parserUI.new(tokens[index..tokenLength-1], sc)
+      parser.parse()
+      # echo(r)
+      index += parser.getUsedTokenTotal()
+      parser.printOpts()
 
 proc main() =
     # parseTest()

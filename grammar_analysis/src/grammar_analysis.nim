@@ -7,6 +7,7 @@ import "parse/ihandle"
 import "parse/handle_parse" as grammarhandleparse
 import "structs/scope"
 import "strformat"
+import options
 
 proc printDividing(n: int) =
     var s: string
@@ -22,7 +23,12 @@ proc main() =
     printDividing(100)
     var parser = grammarparse.newParser(tokens)
     let handle: ihandle.IHandle = new(grammarhandle.Handle)
-    var sc = scope.newScope("main", true)
+    var sc = scope.Scope(
+      curPackage: scope.newPackage("main"),
+      rootBlock: scope.newBlock(scope.BlockType.BlockType_Package),
+      curBlock: scope.newLocalBlock(),
+      parentBlock: none(LocalBlock)
+    )
     handle.parse(parser, sc)
     let opts = parser.getOpts()
     for i, opt in opts.pairs:

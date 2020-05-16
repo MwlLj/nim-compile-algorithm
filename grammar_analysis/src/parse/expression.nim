@@ -11,7 +11,7 @@ proc handleExpression*(handle: ihandle.IHandle, parser: var parse.Parser,
         instruction: optcode.Instruction.Instruction_Express_Stmt
     ))
     # handle
-    var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1])
+    var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1], sc)
     if operandEndCb.isSome():
       expressParser.setOperandEndCb(operandEndCb.get())
     expressParser.parse()
