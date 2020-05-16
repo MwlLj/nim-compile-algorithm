@@ -20,6 +20,29 @@ import "../../../lexical_analysis/src/token/token"
 import strformat
 import "options"
 
+# 如果存在 else 语句, 那么直接编译语句块, 然后跳转到语句块之后
+# 返回值: 待填充的blockEnd语句块的索引
+proc handleElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scope.Scope): int =
+  # 跳过 else
+  parser.skipNextOne()
+  # 找到 else 后面的 {
+  if not parser.findUntilEndTokenType(token.TokenType.TokenType_Symbol_Big_Parenthese_Left):
+    quit("expect a {, but got EOF")
+  else:
+    parser.skipNextOne()
+  self.parse(parser, sc,
+    some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
+    expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
+      result = false
+      if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
+        return true))
+  let blockEndOptIndex = parser.opts.len()
+  parser.opts.add(opparse.Opt(
+    instruction: optcode.Instruction.Instruction_Condition_Block_End,
+    values: @[opparse.OptValue()]
+  ))
+  return blockEndOptIndex
+
 # 返回值: optIndex 和 blockEndOptIndex
 proc handleIfElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scope.Scope): tuple[optIndex: int, blockEndOptIndex: int] =
     #[
@@ -45,6 +68,9 @@ proc handleIfElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var 
         return false)
     expressParser.parse()
     let opts = expressParser.getOpts()
+    # 如果 opts 的结果个数是0, 说明, 表达式的计算为空 => 表示的是, 这里不存在一个表达式
+    if opts.len() == 0:
+      quit("expect express")
     parser.opts.add(opts)
     # 条件结束
     # 记录之后要修改的操作码位置
@@ -96,6 +122,9 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
         return false)
     expressParser.parse()
     let opts = expressParser.getOpts()
+    # 如果 opts 的结果个数是0, 说明, 表达式的计算为空 => 表示的是, 这里不存在一个表达式
+    if opts.len() == 0:
+      quit("expect express")
     parser.opts.add(opts)
     # 条件结束
     # 记录之后要修改的操作码位置
@@ -143,14 +172,21 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
         optIndex = v.optIndex
         blockEndOptIndexs.add(v.blockEndOptIndex)
       of token.TokenType.TokenType_KW_Else:
-        discard
+        # 填充 optIndex 的第二个参数
+        parser.opts[optIndex].values[1] = (opparse.OptValue(
+          integer: some(int64(parser.opts.len()))
+        ))
+        let blockEndOptIndex = self.handleElseStmt(parser, sc)
+        blockEndOptIndexs.add(blockEndOptIndex)
+        break
       else:
         break
     # 最后一个 else if / else 指令的第二个参数需要在循环外赋值
+    #[
     parser.opts[optIndex].values[1] = (opparse.OptValue(
       integer: some(int64(parser.opts.len()))
     ))
-    echo(blockEndOptIndexs)
+    ]#
     for index in blockEndOptIndexs:
       parser.opts[index].values[0] = opparse.OptValue(
         integer: some(int64(parser.opts.len()))

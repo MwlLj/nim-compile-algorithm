@@ -49,6 +49,7 @@ proc handleZeroStart(self: var parse.Parse) =
             number = 0
             tokenType = token.TokenType.TokenType_Number_Des
         else:
+            var count = 0
             while true:
                 let v = self.lookupNextOne()
                 if v.isNone():
@@ -60,7 +61,12 @@ proc handleZeroStart(self: var parse.Parse) =
                     else:
                         number = number * 8 + n.get()
                         self.skipNextOne()
-            tokenType = token.TokenType.TokenType_Number_Oct
+                        count += 1
+            if count == 0:
+              # 0 后面不是数值, 且只有一个 0 => 应该为整数
+              tokenType = token.TokenType.TokenType_Number_Des
+            else:
+              tokenType = token.TokenType.TokenType_Number_Oct
     self.addInt64(tokenType, number)
 
 proc handleNumber*(self: var parse.Parse, firstChar: char) =

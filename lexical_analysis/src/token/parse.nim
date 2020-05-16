@@ -90,6 +90,12 @@ proc addInt64*(self: var parse.Parse, tokenType: token.TokenType, i: int64) =
         )
     ))
 
+proc getIndex*(self: parse.Parse): int =
+  result = self.index
+
+proc setIndex*(self: var parse.Parse, index: int) =
+  self.index = index
+
 proc new*(stream: string): Parse =
     result = Parse(
         stream: stream,

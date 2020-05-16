@@ -5,7 +5,7 @@ import options
 import strformat
 
 proc main() =
-    let stream = readFile("./resource/test.dog")
+    let stream = readFile("./resource/test.lion")
     var parser = parse.new(stream)
     let tokens = handle.parse(parser)
     for t in tokens:

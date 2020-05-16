@@ -6,6 +6,7 @@ import "parse/handle" as grammarhandle
 import "parse/ihandle"
 import "parse/handle_parse" as grammarhandleparse
 import "structs/scope"
+import "strformat"
 
 proc printDividing(n: int) =
     var s: string
@@ -24,7 +25,8 @@ proc main() =
     var sc = scope.newScope("main", true)
     handle.parse(parser, sc)
     let opts = parser.getOpts()
-    echo(opts)
+    for i, opt in opts.pairs:
+      echo(fmt"#{i}: {opt}")
 
 when isMainModule:
     main()
