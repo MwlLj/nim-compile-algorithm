@@ -37,7 +37,7 @@ proc handleElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var sc
   sc.parentBlock = some(sc.curBlock)
   sc.curBlock = scope.newLocalBlock()
   ]#
-  sc.blockSwitch()
+  sc.enterBlock()
   self.parse(parser, sc,
     some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
     expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
@@ -49,7 +49,7 @@ proc handleElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var sc
   sc.curBlock = sc.parentBlock.get()
   sc.parentBlock = parentBlock
   ]#
-  sc.blockReduction()
+  sc.leaveBlock()
   let blockEndOptIndex = parser.opts.len()
   parser.opts.add(opparse.Opt(
     instruction: optcode.Instruction.Instruction_Condition_Block_End,
@@ -100,14 +100,14 @@ proc handleIfElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var 
     parser.skipNextN(expressParser.getUsedTokenTotal())
     # 处理 { } 之间的 语句
     # 让当前作用域作为 {} 块中的 父作用域
-    sc.blockSwitch()
+    sc.enterBlock()
     self.parse(parser, sc,
       some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
       expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
         result = false
         if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
           return true))
-    sc.blockReduction()
+    sc.leaveBlock()
     let blockEndOptIndex = parser.opts.len()
     parser.opts.add(opparse.Opt(
       instruction: optcode.Instruction.Instruction_Condition_Block_End,
@@ -157,14 +157,14 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
     parser.skipNextN(expressParser.getUsedTokenTotal())
     # 处理 { } 之间的 语句
     # 让当前作用域作为 {} 块中的 父作用域
-    sc.blockSwitch()
+    sc.enterBlock()
     self.parse(parser, sc,
       some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
       expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
         result = false
         if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
           return true))
-    sc.blockReduction()
+    sc.leaveBlock()
     # 语句块处理完毕应该跳转到 整个if语句的最后
     var blockEndOptIndexs = newSeq[int]()
     var blockEndOptIndex = parser.opts.len()

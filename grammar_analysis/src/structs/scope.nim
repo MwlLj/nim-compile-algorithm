@@ -31,7 +31,7 @@ type
 
 # 用于 非 Block 的 块 (if 语句的块, for / while 语句的 块, 大括号定义的块)
 type
-  LocalBlock* = ref object
+  LocalBlock* = object
     # 这里的变量不会被写入字节码中, 是在编译期间使用的, 所以不需要 seq 结构, 使用 table 结构更加的高效
     vars*: Table[string, Var]
 
@@ -42,40 +42,46 @@ type
       # 根 block (package / function)
       # 实际存储变量的地方
       rootBlock*: Block
-      # 当前块
-      curBlock*: LocalBlock
-      # 父级块
-      parentBlock*: Option[LocalBlock]
-      # 用于切换时临时存储 parentBlock
-      tmpParentBlock: Option[LocalBlock]
-
-proc newLocalBlock*(): LocalBlock
-
-# --- scope ---
-# block切换
-proc blockSwitch*(self: var Scope) =
-  # 将 parentBlock 保存 (还原时需要使用)
-  self.tmpParentBlock = self.parentBlock
-  # 将 curBlock 作为新block的 parentBlock
-  self.parentBlock = some(self.curBlock)
-  # 创建新的 block
-  self.curBlock = newLocalBlock()
-
-# block还原
-proc blockReduction*(self: var Scope) =
-  # 将父block给curBlock
-  self.curBlock = self.parentBlock.get()
-  # 将进入新作用域前保存的 parent 还原
-  self.parentBlock = self.tmpParentBlock
+      # 在 rootBlock 创建的同时, 会创建一个存储所有变量的容器
+      # key: 作用域所在位置的索引
+      # value: 当前作用域下面的变量集合
+      localBlocks: Table[int, LocalBlock]
+      # 当前块索引
+      curBlockIndex: int
 
 # --- local block ---
 # 判断给定的变量在block中是否存在
-proc exists*(self: LocalBlock, name: string): bool =
-  result = self.vars.hasKey(name)
-
 proc newLocalBlock*(): LocalBlock =
   result = LocalBlock(
     vars: initTable[string, Var]()
+  )
+
+# --- scope ---
+# 进入block
+proc enterBlock*(self: var Scope) =
+  # 创建新的作用域
+  self.curBlockIndex += 1
+  self.localBlocks.add(self.curBlockIndex, newLocalBlock())
+
+# 离开block
+proc leaveBlock*(self: var Scope) =
+  self.curBlockIndex -= 1
+  self.localBlocks.del(self.curBlockIndex)
+
+proc isInCurBlock*(self: Scope, name: string): bool =
+  let localBlock = self.localBlocks[self.curBlockIndex]
+  result = localBlock.vars.hasKey(name)
+
+# 只有 包 可以创建 Scope
+proc newScope*(curPackage: Package, rootBlock: Block): Scope =
+  let curBlockIndex = 0
+  var localBlocks = initTable[int, LocalBlock]()
+  localBlocks.add(curBlockIndex, newLocalBlock())
+  result = Scope(
+    curPackage: curPackage,
+    rootBlock: rootBlock,
+    localBlocks: localBlocks,
+    curBlockIndex: curBlockIndex
   )
 
 # --- block ---

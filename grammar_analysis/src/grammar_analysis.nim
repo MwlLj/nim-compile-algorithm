@@ -23,11 +23,9 @@ proc main() =
     printDividing(100)
     var parser = grammarparse.newParser(tokens)
     let handle: ihandle.IHandle = new(grammarhandle.Handle)
-    var sc = scope.Scope(
-      curPackage: scope.newPackage("main"),
-      rootBlock: scope.newBlock(scope.BlockType.BlockType_Package),
-      curBlock: scope.newLocalBlock(),
-      parentBlock: none(LocalBlock)
+    var sc = scope.newScope(
+      curPackage=scope.newPackage("main"),
+      rootBlock=scope.newBlock(scope.BlockType.BlockType_Package)
     )
     handle.parse(parser, sc)
     let opts = parser.getOpts()

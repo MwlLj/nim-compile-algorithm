@@ -69,7 +69,7 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
         quit("identify is invalid")
     let varName = nextToken.value.str.get()
     # 判断变量名在当前的block中是否存在
-    if sc.curBlock.exists(varName):
+    if sc.isInCurBlock(varName):
         # 变量在当前的block中存在 => 报错
         quit("var already define")
     # 跳过 变量名
