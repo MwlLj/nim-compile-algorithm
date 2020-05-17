@@ -18,5 +18,5 @@ proc handleExpression*(handle: ihandle.IHandle, parser: var parse.Parser,
     let opts = expressParser.getOpts()
     parser.opts.add(opts)
     let total = expressParser.getUsedTokenTotal()
-    parser.skipNextN(total)
+    parser.skipNextN(total - 1)
 

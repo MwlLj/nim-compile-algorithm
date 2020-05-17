@@ -8,8 +8,8 @@ type
 
 type
   Var* = object
-    name*: string
-    value*: VarValue
+    # 存储在实际存储位置的位置
+    index*: int
 
 type
   Package* = object
@@ -50,7 +50,6 @@ type
       curBlockIndex: int
 
 # --- local block ---
-# 判断给定的变量在block中是否存在
 proc newLocalBlock*(): LocalBlock =
   result = LocalBlock(
     vars: initTable[string, Var]()
@@ -65,12 +64,20 @@ proc enterBlock*(self: var Scope) =
 
 # 离开block
 proc leaveBlock*(self: var Scope) =
-  self.curBlockIndex -= 1
   self.localBlocks.del(self.curBlockIndex)
+  self.curBlockIndex -= 1
 
 proc isInCurBlock*(self: Scope, name: string): bool =
   let localBlock = self.localBlocks[self.curBlockIndex]
   result = localBlock.vars.hasKey(name)
+
+# 向当前块中添加值
+proc addVarToCurBlock*(self: var Scope, name: string, v: Var) =
+  self.localBlocks[self.curBlockIndex].vars.add(name, v)
+
+proc printLocalBlocks*(self: Scope) =
+  echo(self.localBlocks)
+  echo(self.localBlocks.len())
 
 # 只有 包 可以创建 Scope
 proc newScope*(curPackage: Package, rootBlock: Block): Scope =

@@ -31,6 +31,7 @@ proc main() =
     let opts = parser.getOpts()
     for i, opt in opts.pairs:
       echo(fmt"#{i}: {opt}")
+    sc.printLocalBlocks()
 
 when isMainModule:
     main()

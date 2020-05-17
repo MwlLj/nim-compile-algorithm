@@ -190,8 +190,12 @@ proc handleVarDefine*(self: ihandle.IHandle, parser: var parse.Parser, sc: var s
         parser.skipNextN(expressParser.getUsedTokenTotal())
     else:
         quit(fmt"expect linebreak or ; or =, but found {afterTypeToken.tokenType}")
-    # 将变量写入package域中的vars中
+    # 将变量写入当前根域中的vars中
     let index = sc.rootBlock.pushVar()
+    # 将变量写入当前的block中
+    sc.addVarToCurBlock(varName, Var(
+      index: index
+    ))
     # 生成变量定义指令
     parser.opts.add(opparse.Opt(
       instruction: optcode.Instruction.Instruction_Current_Scope_Var_Define,
