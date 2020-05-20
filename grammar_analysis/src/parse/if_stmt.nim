@@ -34,16 +34,18 @@ proc handleElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var sc
   # 让当前作用域作为 {} 块中的 父作用域
   #[
   let parentBlock = sc.parentBlock
-  sc.parentBlock = some(sc.curBlock)
-  sc.curBlock = scope.newLocalBlock()
+  sc.parentBlock = some(sc.curBlock) sc.curBlock = scope.newLocalBlock()
   ]#
   sc.enterBlock()
   self.parse(parser, sc,
     some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
-    expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
-      result = false
-      if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
-        return true))
+    expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): tuple[isEnd: bool, isSkipNext: bool] =
+      var isSkipNext = true
+      result = (false, isSkipNext)
+      if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) or (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
+        if t.tokenType != token.TokenType.TokenType_Symbol_Big_Parenthese_Right:
+          isSkipNext = false
+        return (true, isSkipNext)))
   # {} 解析完毕 => 将作用域还原
   #[
   sc.curBlock = sc.parentBlock.get()
@@ -75,11 +77,11 @@ proc handleIfElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var 
     ))
     # 处理 else if { 之间的条件表达式
     var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1], sc)
-    expressParser.setOperandEndCb(proc(t: token.Token): bool =
+    expressParser.setOperandEndCb(proc(t: token.Token): tuple[isEnd: bool, isSkipNext: bool] =
         if t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Left:
             # 遇到 { 结束
-            return true
-        return false)
+            return (true, true)
+        return (false, false))
     expressParser.parse()
     let opts = expressParser.getOpts()
     # 如果 opts 的结果个数是0, 说明, 表达式的计算为空 => 表示的是, 这里不存在一个表达式
@@ -103,10 +105,13 @@ proc handleIfElseStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var 
     sc.enterBlock()
     self.parse(parser, sc,
       some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
-      expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
-        result = false
-        if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
-          return true))
+      expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): tuple[isEnd: bool, isSkipNext: bool] =
+        var isSkipNext = true
+        result = (false, isSkipNext)
+        if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) or (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
+          if t.tokenType != token.TokenType.TokenType_Symbol_Big_Parenthese_Right:
+            isSkipNext = false
+          return (true, isSkipNext)))
     sc.leaveBlock()
     parser.opts.add(opparse.Opt(
       instruction: optcode.Instruction.Instruction_Condition_Block_End,
@@ -133,11 +138,11 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
     ))
     # 处理 if { 之间的条件表达式
     var expressParser = opparse.new(parser.tokens[parser.index..parser.length-1], sc)
-    expressParser.setOperandEndCb(proc(t: token.Token): bool =
+    expressParser.setOperandEndCb(proc(t: token.Token): tuple[isEnd: bool, isSkipNext: bool] =
         if t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Left:
             # 遇到 { 结束
-            return true
-        return false)
+            return (true, true)
+        return (false, false))
     expressParser.parse()
     let opts = expressParser.getOpts()
     # 如果 opts 的结果个数是0, 说明, 表达式的计算为空 => 表示的是, 这里不存在一个表达式
@@ -161,10 +166,13 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
     sc.enterBlock()
     self.parse(parser, sc,
       some(token.TokenType.TokenType_Symbol_Big_Parenthese_Right),
-      expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): bool =
-        result = false
-        if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) and (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
-          return true))
+      expressOperandEndCb=some((opparse.operandEndCbFunc)proc(t: token.Token): tuple[isEnd: bool, isSkipNext: bool] =
+        var isSkipNext = true
+        result = (false, isSkipNext)
+        if (t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right) or (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
+          if t.tokenType == token.TokenType.TokenType_Symbol_Big_Parenthese_Right:
+            isSkipNext = false
+          return (true, isSkipNext)))
     sc.leaveBlock()
     # 语句块处理完毕应该跳转到 整个if语句的最后
     var blockEndOptIndexs = newSeq[int]()
@@ -196,7 +204,6 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
         # 所以这里不需要判断是否是 if 后的第一个 else if (都可以用 optIndex 表示)
         let v = self.handleIfElseStmt(parser, sc)
         optIndex = v.optIndex
-        echo(optIndex, ", ", parser.opts.len())
         parser.opts[optIndex].values[1] = (opparse.OptValue(
           integer: some(int64(parser.opts.len()))
           # integer: some(int64(v.blockEndOptIndex))
@@ -205,7 +212,6 @@ proc handleIfStmt*(self: ihandle.IHandle, parser: var parse.Parser, sc: var scop
       of token.TokenType.TokenType_KW_Else:
         # 填充 optIndex 的第二个参数
         let blockEndOptIndex = self.handleElseStmt(parser, sc)
-        echo(optIndex, ", ", parser.opts.len())
         # parser.opts[optIndex].values[1] = (opparse.OptValue(
         #   integer: some(int64(parser.opts.len()))
         # ))
