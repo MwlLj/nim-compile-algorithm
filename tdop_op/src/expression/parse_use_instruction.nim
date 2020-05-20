@@ -10,9 +10,11 @@ import strformat
   1 || 2 && 3
   #0 expr_start
   #1 iconst 1
+  // 如果成功就跳转到 5
   #2 opt_or #5
   #3 iconst 2
   #4 opt_or_calc
+  // 如果失败就跳转到 8
   #5 opt_and #8
   #6 iconst 3
   #7 opt_and_calc
@@ -29,6 +31,8 @@ type
         instruction*: Instruction
         values*: seq[OptValue]
 
+type operandEndCbFunc* = proc(t: token.Token): tuple[isEnd: bool, isSkipNext: bool]
+
 type
     Parse = ref object
         tokens: seq[token.Token]
@@ -40,11 +44,9 @@ type
         # nup 方法的 操作数回调
         nupOperandCb: proc(parser: var Parse)
         # 返回值: 是否遇到结束符
-        operandEndCb: proc(t: token.Token): bool
+        operandEndCb: operandEndCbFunc
         nupEnterTimes: int
         nupToken: token.Token
-
-type operandEndCbFunc* = proc(t: token.Token): bool
 
 proc new*(tokens: seq[token.Token], sc: scope.Scope): Parse
 proc getCurrentToken(self: var Parse): Option[token.Token]
@@ -56,10 +58,10 @@ proc express(self: var Parse, rbp: int, isRight: bool = false, exprType: expr.Ex
 proc addTokenInstruction(self: var Parse, t: token.Token)
 proc addTokenValueInstruction(self: var Parse, value: Option[token.Value])
 
-proc operandEndNormalCb(t: token.Token): bool =
+proc operandEndNormalCb(t: token.Token): tuple[isEnd: bool, isSkipNext: bool] =
     if (t.tokenType == token.TokenType.TokenType_Line_Break) or (t.tokenType == token.TokenType.TokenType_Back_Slash_R) or (t.tokenType == token.TokenType_Semicolon):
-        return true
-    return false
+        return (true, true)
+    return (false, false)
 
 # 小括号结束回调
 # proc parenthese
@@ -71,10 +73,12 @@ proc operandLinebreak(parser: var Parse) =
         # 下一个 token 是空的 => 操作数 / 小括号 后是是结束 => 返回 本次结果
         return
     if parser.operandEndCb != nil:
-        if parser.operandEndCb(nextToken.get()):
-            # 检测到结束
+        let v = parser.operandEndCb(nextToken.get())
+        if v.isEnd:
+          # 检测到结束
+          if v.isSkipNext:
             parser.skipNextOne()
-            parser.isEnd = true
+          parser.isEnd = true
     #[
     if (nextToken.get().tokenType == token.TokenType.TokenType_Line_Break) or (nextToken.get().tokenType == token.TokenType.TokenType_Back_Slash_R):
         parser.skipNextOne()
